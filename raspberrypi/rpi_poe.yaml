@@ -1,0 +1,23 @@
+overlay:
+  name: rpi_generic
+  image: siderolabs/sbc-raspberrypi
+  options:
+    configTxt: |
+      gpu_mem=128
+      kernel=u-boot.bin
+      arm_64bit=1
+      arm_boost=1
+      enable_uart=1
+      dtoverlay=disable-bt
+      dtoverlay=disable-wifi
+      avoid_warnings=2
+      dtoverlay=vc4-kms-v3d,noaudio
+      dtoverlay=rpi-poe
+      dtparam=poe_fan_temp0=65000,poe_fan_temp0_hyst=5000
+      dtparam=poe_fan_temp1=70000,poe_fan_temp1_hyst=4999
+      dtparam=poe_fan_temp2=75000,poe_fan_temp2_hyst=4999
+      dtparam=poe_fan_temp3=80000,poe_fan_temp3_hyst=4999
+customization:
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/vc4

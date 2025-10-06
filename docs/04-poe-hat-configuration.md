@@ -15,23 +15,34 @@ This guide covers configuring Raspberry Pi PoE HAT fan control using a custom Ta
 ### Image Factory Schematic
 
 **Current Configuration:**
-- **Schematic ID**: `2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d`
+- **Schematic ID**: `3f2272fedf123e61d98b8732dd415b04c5673a1027859bfa69f90e5a34221a2f`
 - **Version**: `v1.11.2`
-- **Installer**: `factory.talos.dev/installer/2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d:v1.11.2`
+- **Installer**: `factory.talos.dev/installer/3f2272fedf123e61d98b8732dd415b04c5673a1027859bfa69f90e5a34221a2f:v1.11.2`
 
 **Overlay Configuration:**
+
+The full configuration is stored in `raspberrypi/rpi_poe.yaml`:
+
 ```yaml
 overlay:
-  image: siderolabs/sbc-raspberrypi
   name: rpi_generic
+  image: siderolabs/sbc-raspberrypi
   options:
-    configTxtAppend: |
+    configTxt: |
+      gpu_mem=128
+      kernel=u-boot.bin
+      arm_64bit=1
+      arm_boost=1
+      enable_uart=1
+      dtoverlay=disable-bt
+      dtoverlay=disable-wifi
+      avoid_warnings=2
+      dtoverlay=vc4-kms-v3d,noaudio
       dtoverlay=rpi-poe
       dtparam=poe_fan_temp0=65000,poe_fan_temp0_hyst=5000
       dtparam=poe_fan_temp1=70000,poe_fan_temp1_hyst=4999
       dtparam=poe_fan_temp2=75000,poe_fan_temp2_hyst=4999
       dtparam=poe_fan_temp3=80000,poe_fan_temp3_hyst=4999
-customization: {}
 ```
 
 ### Fan Temperature Thresholds
@@ -56,60 +67,44 @@ The fan operates at 4 speed levels based on CPU temperature:
 1. Go to https://factory.talos.dev
 2. Select **Single Board Computer** → **Raspberry Pi Generic**
 3. Choose **System Extensions**: `siderolabs/sbc-raspberrypi`
-4. In **Customization** section, add:
-   ```yaml
-   overlay:
-     image: siderolabs/sbc-raspberrypi
-     name: rpi_generic
-     options:
-       configTxtAppend: |
-         dtoverlay=rpi-poe
-         dtparam=poe_fan_temp0=65000,poe_fan_temp0_hyst=5000
-         dtparam=poe_fan_temp1=70000,poe_fan_temp1_hyst=4999
-         dtparam=poe_fan_temp2=75000,poe_fan_temp2_hyst=4999
-         dtparam=poe_fan_temp3=80000,poe_fan_temp3_hyst=4999
-   ```
+4. In **Customization** section, paste the contents of `raspberrypi/rpi_poe.yaml`
 5. Click **Generate**
 6. Note the **Schematic ID** provided
 
-### Option 2: Using talosctl
+**Note**: The Web UI method may produce a different schematic ID than the curl method, but the functionality will be identical.
+
+### Option 2: Using curl (Recommended)
 
 ```bash
-# Create schematic configuration file
-cat > poe-schematic.yaml <<EOF
-overlay:
-  image: siderolabs/sbc-raspberrypi
-  name: rpi_generic
-  options:
-    configTxtAppend: |
-      dtoverlay=rpi-poe
-      dtparam=poe_fan_temp0=65000,poe_fan_temp0_hyst=5000
-      dtparam=poe_fan_temp1=70000,poe_fan_temp1_hyst=4999
-      dtparam=poe_fan_temp2=75000,poe_fan_temp2_hyst=4999
-      dtparam=poe_fan_temp3=80000,poe_fan_temp3_hyst=4999
-customization: {}
-EOF
+# Use the configuration file in the repository
+cd raspberrypi/
+curl -X POST --data-binary @rpi_poe.yaml https://factory.talos.dev/schematics
 
-# Generate schematic (requires talosctl v1.7+)
-talosctl image factory schematic create -f poe-schematic.yaml
+# Returns the schematic ID, for example:
+# {"id":"3f2272fedf123e61d98b8732dd415b04c5673a1027859bfa69f90e5a34221a2f"}
 ```
+
+The schematic configuration is stored in `raspberrypi/rpi_poe.yaml` for version control.
 
 ## Upgrading Existing Cluster
 
 ### Rolling Upgrade (No Downtime)
 
-**Important**: Use `--wait=false` flag to avoid permission errors with health monitoring.
+**Important**: Use `--reboot-mode powercycle` for reliable PoE HAT configuration updates.
 
 ```bash
 # Set talosconfig
 export TALOSCONFIG=~/.talos-secrets/automation/talosconfig
 
+# Set schematic and version
+SCHEMATIC_ID="3f2272fedf123e61d98b8732dd415b04c5673a1027859bfa69f90e5a34221a2f"
+TALOS_VERSION="v1.11.2"
+
 # Upgrade control plane nodes (one at a time)
 echo "Upgrading control plane node 1 (192.168.1.11)..."
 talosctl upgrade --nodes 192.168.1.11 \
-  --image factory.talos.dev/installer/2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d:v1.11.2 \
-  --preserve \
-  --wait=false
+  --reboot-mode powercycle \
+  --image factory.talos.dev/installer/${SCHEMATIC_ID}:${TALOS_VERSION}
 
 # Wait for upgrade to complete (~2 minutes)
 sleep 120
@@ -119,17 +114,15 @@ kubectl get nodes
 
 echo "Upgrading control plane node 2 (192.168.1.12)..."
 talosctl upgrade --nodes 192.168.1.12 \
-  --image factory.talos.dev/installer/2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d:v1.11.2 \
-  --preserve \
-  --wait=false
+  --reboot-mode powercycle \
+  --image factory.talos.dev/installer/${SCHEMATIC_ID}:${TALOS_VERSION}
 
 sleep 120
 
 echo "Upgrading control plane node 3 (192.168.1.13)..."
 talosctl upgrade --nodes 192.168.1.13 \
-  --image factory.talos.dev/installer/2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d:v1.11.2 \
-  --preserve \
-  --wait=false
+  --reboot-mode powercycle \
+  --image factory.talos.dev/installer/${SCHEMATIC_ID}:${TALOS_VERSION}
 
 sleep 120
 
@@ -139,9 +132,8 @@ kubectl get nodes
 # Upgrade worker node
 echo "Upgrading worker node (192.168.1.14)..."
 talosctl upgrade --nodes 192.168.1.14 \
-  --image factory.talos.dev/installer/2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d:v1.11.2 \
-  --preserve \
-  --wait=false
+  --reboot-mode powercycle \
+  --image factory.talos.dev/installer/${SCHEMATIC_ID}:${TALOS_VERSION}
 
 sleep 90
 
@@ -177,7 +169,7 @@ If building a new cluster or re-flashing SD cards:
 
 ```bash
 # Download custom image
-SCHEMATIC_ID=2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d
+SCHEMATIC_ID=3f2272fedf123e61d98b8732dd415b04c5673a1027859bfa69f90e5a34221a2f
 TALOS_VERSION=v1.11.2
 
 cd ~/Downloads
@@ -326,25 +318,25 @@ talosctl -n 192.168.1.11 reboot
 
 When upgrading Talos versions:
 
-1. Check if your schematic exists for the new version:
+1. Regenerate schematic with new version:
    ```bash
-   curl -I https://factory.talos.dev/image/2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d:v1.12.0
+   cd raspberrypi/
+   curl -X POST --data-binary @rpi_poe.yaml https://factory.talos.dev/schematics
+   # Note the new schematic ID
    ```
 
-2. If 404, regenerate schematic at https://factory.talos.dev with new version
-
-3. Update installer image in upgrade commands:
+2. Update installer image in upgrade commands:
    ```bash
    talosctl upgrade --nodes <node> \
-     --image factory.talos.dev/installer/<new-schematic-id>:v1.12.0 \
-     --preserve \
-     --wait=false
+     --reboot-mode powercycle \
+     --image factory.talos.dev/installer/<new-schematic-id>:v1.12.0
    ```
 
 ## Reference
 
-- **Current Schematic ID**: `2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d`
+- **Current Schematic ID**: `3f2272fedf123e61d98b8732dd415b04c5673a1027859bfa69f90e5a34221a2f`
 - **Current Version**: `v1.11.2`
+- **Configuration File**: `raspberrypi/rpi_poe.yaml`
 - **Talos Image Factory**: https://factory.talos.dev
 - **Raspberry Pi PoE HAT Documentation**: https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#poe-hat
 - **Talos SBC Extensions**: https://github.com/siderolabs/extensions
@@ -356,16 +348,16 @@ When upgrading Talos versions:
 cat > ~/.talos-secrets/automation/SCHEMATIC.md <<EOF
 # Talos Custom Image Configuration
 
-**Schematic ID**: 2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d
+**Schematic ID**: 3f2272fedf123e61d98b8732dd415b04c5673a1027859bfa69f90e5a34221a2f
 **Version**: v1.11.2
 **Created**: $(date)
 
 **Purpose**: PoE HAT fan control with temperature-based speed regulation
 
 **Installer Image**:
-factory.talos.dev/installer/2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d:v1.11.2
+factory.talos.dev/installer/3f2272fedf123e61d98b8732dd415b04c5673a1027859bfa69f90e5a34221a2f:v1.11.2
 
-**Configuration**: See docs/04-poe-hat-configuration.md
+**Configuration**: See raspberrypi/rpi_poe.yaml and docs/04-poe-hat-configuration.md
 EOF
 
 # Backup to external drive with secrets
