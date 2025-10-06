@@ -27,10 +27,10 @@ overlay:
   options:
     configTxtAppend: |
       dtoverlay=rpi-poe
-      dtparam=poe_fan_temp0=70000,poe_fan_temp0_hyst=1000
-      dtparam=poe_fan_temp1=75000,poe_fan_temp1_hyst=5000
-      dtparam=poe_fan_temp2=80000,poe_fan_temp2_hyst=5000
-      dtparam=poe_fan_temp3=82000,poe_fan_temp3_hyst=2000
+      dtparam=poe_fan_temp0=65000,poe_fan_temp0_hyst=5000
+      dtparam=poe_fan_temp1=70000,poe_fan_temp1_hyst=4999
+      dtparam=poe_fan_temp2=75000,poe_fan_temp2_hyst=4999
+      dtparam=poe_fan_temp3=80000,poe_fan_temp3_hyst=4999
 customization: {}
 ```
 
@@ -40,10 +40,10 @@ The fan operates at 4 speed levels based on CPU temperature:
 
 | Level | Temperature | Hysteresis | Fan Speed |
 |-------|-------------|------------|-----------|
-| 0     | 70°C        | 1°C        | Low       |
-| 1     | 75°C        | 5°C        | Medium    |
-| 2     | 80°C        | 5°C        | High      |
-| 3     | 82°C        | 2°C        | Maximum   |
+| 0     | 65°C        | 5°C        | Low       |
+| 1     | 70°C        | ~5°C       | Medium    |
+| 2     | 75°C        | ~5°C       | High      |
+| 3     | 80°C        | ~5°C       | Maximum   |
 
 **Temperature format**: Millidegrees Celsius (70000 = 70°C)
 
@@ -64,10 +64,10 @@ The fan operates at 4 speed levels based on CPU temperature:
      options:
        configTxtAppend: |
          dtoverlay=rpi-poe
-         dtparam=poe_fan_temp0=70000,poe_fan_temp0_hyst=1000
-         dtparam=poe_fan_temp1=75000,poe_fan_temp1_hyst=5000
-         dtparam=poe_fan_temp2=80000,poe_fan_temp2_hyst=5000
-         dtparam=poe_fan_temp3=82000,poe_fan_temp3_hyst=2000
+         dtparam=poe_fan_temp0=65000,poe_fan_temp0_hyst=5000
+         dtparam=poe_fan_temp1=70000,poe_fan_temp1_hyst=4999
+         dtparam=poe_fan_temp2=75000,poe_fan_temp2_hyst=4999
+         dtparam=poe_fan_temp3=80000,poe_fan_temp3_hyst=4999
    ```
 5. Click **Generate**
 6. Note the **Schematic ID** provided
@@ -83,10 +83,10 @@ overlay:
   options:
     configTxtAppend: |
       dtoverlay=rpi-poe
-      dtparam=poe_fan_temp0=70000,poe_fan_temp0_hyst=1000
-      dtparam=poe_fan_temp1=75000,poe_fan_temp1_hyst=5000
-      dtparam=poe_fan_temp2=80000,poe_fan_temp2_hyst=5000
-      dtparam=poe_fan_temp3=82000,poe_fan_temp3_hyst=2000
+      dtparam=poe_fan_temp0=65000,poe_fan_temp0_hyst=5000
+      dtparam=poe_fan_temp1=70000,poe_fan_temp1_hyst=4999
+      dtparam=poe_fan_temp2=75000,poe_fan_temp2_hyst=4999
+      dtparam=poe_fan_temp3=80000,poe_fan_temp3_hyst=4999
 customization: {}
 EOF
 
@@ -115,7 +115,7 @@ talosctl upgrade --nodes 192.168.1.11 \
 sleep 120
 
 # Verify node is back online
-kubectl get node talos-drl-j4n
+kubectl get nodes
 
 echo "Upgrading control plane node 2 (192.168.1.12)..."
 talosctl upgrade --nodes 192.168.1.12 \
@@ -125,19 +125,19 @@ talosctl upgrade --nodes 192.168.1.12 \
 
 sleep 120
 
-# Verify control plane is healthy
-kubectl get nodes
-
-# Upgrade worker nodes
-echo "Upgrading worker node 1 (192.168.1.13)..."
+echo "Upgrading control plane node 3 (192.168.1.13)..."
 talosctl upgrade --nodes 192.168.1.13 \
   --image factory.talos.dev/installer/2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d:v1.11.2 \
   --preserve \
   --wait=false
 
-sleep 90
+sleep 120
 
-echo "Upgrading worker node 2 (192.168.1.14)..."
+# Verify control plane is healthy
+kubectl get nodes
+
+# Upgrade worker node
+echo "Upgrading worker node (192.168.1.14)..."
 talosctl upgrade --nodes 192.168.1.14 \
   --image factory.talos.dev/installer/2f29e288424c1e9170e61bd283de477faf6ab18afc11857c7beba11a816c884d:v1.11.2 \
   --preserve \
@@ -154,9 +154,9 @@ talosctl version
 **Expected timeline:**
 - Control plane node 1: ~2 minutes
 - Control plane node 2: ~2 minutes
-- Worker node 1: ~1.5 minutes
-- Worker node 2: ~1.5 minutes
-- **Total: ~7-8 minutes**
+- Control plane node 3: ~2 minutes
+- Worker node: ~1.5 minutes
+- **Total: ~8-9 minutes**
 
 ### Monitoring Upgrade Progress
 
@@ -226,7 +226,7 @@ talosctl -n 192.168.1.11 read /sys/class/thermal/thermal_zone0/temp
 cat > scripts/monitor-poe-fan.sh <<'EOF'
 #!/bin/bash
 echo "Monitoring PoE fan on all nodes..."
-echo "Temperature threshold: 70°C (fan starts)"
+echo "Temperature threshold: 65°C (fan starts)"
 echo ""
 
 for node in 192.168.1.11 192.168.1.12 192.168.1.13 192.168.1.14; do
