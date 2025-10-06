@@ -15,7 +15,10 @@ Production-grade Kubernetes cluster running on Raspberry Pi 4 hardware with Talo
 2. **Network Planning**: [docs/00-network-plan.md](./docs/00-network-plan.md)
 3. **Prerequisites**: [docs/01-prerequisites.md](./docs/01-prerequisites.md)
 4. **Build/Rebuild Cluster**: [docs/02-cluster-rebuild.md](./docs/02-cluster-rebuild.md)
-5. **Core Services**: *(Iteration 2 - coming soon)*
+5. **Core Services**:
+   - [Storage (Local Path Provisioner)](./docs/03-storage-local-path.md)
+   - [Ingress (Traefik)](./docs/05-ingress-traefik.md)
+   - [TLS Certificates (cert-manager)](./docs/06-cert-manager.md)
 
 ## 🏗️ Architecture
 
@@ -176,6 +179,10 @@ helm template my-release chart/ -f values.yaml
 - [00 - Network Planning](./docs/00-network-plan.md) - IP addressing and network setup
 - [01 - Prerequisites](./docs/01-prerequisites.md) - Hardware and software requirements
 - [02 - Cluster Rebuild](./docs/02-cluster-rebuild.md) - Build or rebuild cluster (30 min)
+- [03 - Storage (Local Path Provisioner)](./docs/03-storage-local-path.md) - Single-node persistent storage
+- [04 - PoE HAT Configuration](./docs/04-poe-hat-configuration.md) - Custom Talos image with fan control
+- [05 - Ingress (Traefik)](./docs/05-ingress-traefik.md) - HTTP/HTTPS routing and load balancing
+- [06 - cert-manager](./docs/06-cert-manager.md) - Automatic TLS certificate management
 - [Security Remediation](./SECURITY-REMEDIATION.md) - Security best practices and lessons learned
 
 ## 🛠️ Tools Required
@@ -203,14 +210,18 @@ This project is for personal use. Use at your own risk.
 
 ## 📈 Current Status
 
-**Iteration**: 1 - Foundation
+**Iteration**: 2 - Core Services
 **Last Updated**: 2025-10-06
 
 - ✅ Repository structure created
-- ✅ Documentation started
-- ⬜ Talos installed on hardware
-- ⬜ Cluster bootstrapped
-- ⬜ Core services deployed
+- ✅ Documentation completed
+- ✅ Talos installed on hardware
+- ✅ Cluster bootstrapped (3 control plane + 1 worker)
+- ✅ Core services deployed:
+  - ✅ Storage (Local Path Provisioner with 1TB SSD)
+  - ✅ Ingress (Traefik v3.2.2)
+  - ✅ cert-manager (v1.16.2)
 - ⬜ n8n deployed
+- ⬜ Monitoring deployed
 
 See [ROADMAP.md](./ROADMAP.md) for detailed progress.

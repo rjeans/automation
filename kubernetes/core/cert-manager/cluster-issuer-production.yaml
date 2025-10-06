@@ -1,0 +1,23 @@
+# Let's Encrypt Production ClusterIssuer
+# Use for production - has strict rate limits (5 certs/week per domain)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+spec:
+  acme:
+    # Production server - use only after testing with staging
+    server: https://acme-v02.api.letsencrypt.org/directory
+
+    # Email for expiration notifications
+    email: your-email@example.com  # TODO: Replace with actual email
+
+    # Private key secret for ACME account
+    privateKeySecretRef:
+      name: letsencrypt-production-account-key
+
+    # HTTP-01 challenge solver
+    solvers:
+    - http01:
+        ingress:
+          class: traefik
