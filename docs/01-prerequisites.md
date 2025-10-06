@@ -170,9 +170,9 @@ Before proceeding to Talos installation:
 
 ## Next Steps
 
-Once all prerequisites are complete, proceed to:
+Once all prerequisites are complete:
 - **[00-network-plan.md](./00-network-plan.md)** - Review network planning
-- **[02-talos-installation.md](./02-talos-installation.md)** - Install Talos Linux on Raspberry Pis
+- **[02-cluster-rebuild.md](./02-cluster-rebuild.md)** - Build or rebuild the cluster
 
 ## Additional Resources
 

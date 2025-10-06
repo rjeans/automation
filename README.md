@@ -14,8 +14,8 @@ Production-grade Kubernetes cluster running on Raspberry Pi 4 hardware with Talo
 1. **Read the Roadmap**: [ROADMAP.md](./ROADMAP.md)
 2. **Network Planning**: [docs/00-network-plan.md](./docs/00-network-plan.md)
 3. **Prerequisites**: [docs/01-prerequisites.md](./docs/01-prerequisites.md)
-4. **Install Talos**: [docs/02-talos-installation.md](./docs/02-talos-installation.md)
-5. **Core Services**: [docs/03-core-services.md](./docs/03-core-services.md) *(coming soon)*
+4. **Build/Rebuild Cluster**: [docs/02-cluster-rebuild.md](./docs/02-cluster-rebuild.md)
+5. **Core Services**: *(Iteration 2 - coming soon)*
 
 ## 🏗️ Architecture
 
@@ -175,8 +175,8 @@ helm template my-release chart/ -f values.yaml
 - [Roadmap](./ROADMAP.md) - Project phases and timeline
 - [00 - Network Planning](./docs/00-network-plan.md) - IP addressing and network setup
 - [01 - Prerequisites](./docs/01-prerequisites.md) - Hardware and software requirements
-- [02 - Talos Installation](./docs/02-talos-installation.md) - Cluster installation guide
-- More docs coming as we progress through iterations
+- [02 - Cluster Rebuild](./docs/02-cluster-rebuild.md) - Build or rebuild cluster (30 min)
+- [Security Remediation](./SECURITY-REMEDIATION.md) - Security best practices and lessons learned
 
 ## 🛠️ Tools Required
 

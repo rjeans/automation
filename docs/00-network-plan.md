@@ -181,4 +181,4 @@ Document any special considerations for your network:
 
 Once network is planned and configured:
 - **[01-prerequisites.md](./01-prerequisites.md)** - Complete prerequisites checklist
-- **[02-talos-installation.md](./02-talos-installation.md)** - Install Talos Linux
+- **[02-cluster-rebuild.md](./02-cluster-rebuild.md)** - Build or rebuild the cluster
