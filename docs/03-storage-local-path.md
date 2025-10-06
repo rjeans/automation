@@ -396,6 +396,45 @@ talosctl -n 192.168.1.11 get machineconfig -o yaml | grep -A 5 disks
 talosctl -n 192.168.1.11 patch machineconfig --patch @talos/patches/node-11-storage.yaml
 ```
 
+## Reinstalling Local Path Provisioner
+
+If you need to reinstall (e.g., after cluster rebuild):
+
+```bash
+# 1. Deploy Local Path Provisioner
+kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.30/deploy/local-path-storage.yaml
+
+# 2. Get node .11 hostname
+NODE_11=$(kubectl get nodes -o wide | grep 192.168.1.11 | awk '{print $1}')
+
+# 3. Configure storage path
+kubectl -n local-path-storage patch configmap local-path-config --type merge -p "{
+  \"data\": {
+    \"config.json\": \"{\\n  \\\"nodePathMap\\\":[\\n    {\\n      \\\"node\\\":\\\"${NODE_11}\\\",\\n      \\\"paths\\\":[\\\"/var/mnt/storage\\\"]\\n    },\\n    {\\n      \\\"node\\\":\\\"DEFAULT_PATH_FOR_NON_LISTED_NODES\\\",\\n      \\\"paths\\\":[\\\"/var/mnt/storage\\\"]\\n    }\\n  ]\\n}\"
+  }
+}"
+
+# 4. Fix PodSecurity for helper pods
+kubectl label namespace local-path-storage \
+  pod-security.kubernetes.io/enforce=privileged \
+  pod-security.kubernetes.io/audit=privileged \
+  pod-security.kubernetes.io/warn=privileged \
+  --overwrite
+
+# 5. Restart provisioner to apply config
+kubectl -n local-path-storage rollout restart deployment local-path-provisioner
+
+# 6. Set as default StorageClass
+kubectl patch storageclass local-path \
+  -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+# 7. Verify
+kubectl get storageclass
+kubectl -n local-path-storage get pods
+```
+
+**Note**: The disk mount at `/var/mnt/storage` persists via the Talos patch and survives reboots automatically.
+
 ## Uninstalling Local Path Provisioner
 
 **⚠️ WARNING: This will delete all volumes and data!**
@@ -409,7 +448,8 @@ kubectl delete pvc <pvc-name> -n <namespace>
 kubectl delete -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.30/deploy/local-path-storage.yaml
 
 # 3. Remove data from external drive (optional)
-talosctl -n 192.168.1.11 run sh -c "rm -rf /var/mnt/storage/*"
+# Note: There's no easy way to run commands in Talos
+# Data will remain on /var/mnt/storage until manually cleaned
 ```
 
 ## Storage Specifications
