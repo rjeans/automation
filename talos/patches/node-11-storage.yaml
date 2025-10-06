@@ -1,0 +1,8 @@
+# External storage mount for node .11
+# Device: /dev/sdb (1TB external drive)
+machine:
+  disks:
+    - device: /dev/sdb
+      partitions:
+        - size: 0
+          mountpoint: /var/mnt/storage
