@@ -9,9 +9,9 @@ Cluster network configuration:
 | Hostname | Role | MAC Address | IP Address | Status |
 |----------|------|-------------|------------|--------|
 | rpi-cp01 | Control Plane | | 192.168.1.11 | ✅ Configured |
-| rpi-cp02 | Control Plane | | 192.168.1.12 | ⬜ Not configured |
-| rpi-worker01 | Worker | | 192.168.1.13 | ⬜ Not configured |
-| rpi-worker02 | Worker | | 192.168.1.14 | ⬜ Not configured |
+| rpi-cp02 | Control Plane | | 192.168.1.12 | ✅ Configured |
+| rpi-cp03 | Control Plane | | 192.168.1.13 | ⬜ Not configured |
+| rpi-worker01 | Worker | | 192.168.1.14 | ✅ Configured |
 
 **Network Details**:
 - **Subnet**: 192.168.1.0/24
@@ -41,8 +41,8 @@ Configure your router to assign static IPs based on MAC addresses:
 ```
 MAC: XX:XX:XX:XX:XX:01 → IP: 192.168.1.11 → Hostname: rpi-cp01
 MAC: XX:XX:XX:XX:XX:02 → IP: 192.168.1.12 → Hostname: rpi-cp02
-MAC: XX:XX:XX:XX:XX:03 → IP: 192.168.1.13 → Hostname: rpi-worker01
-MAC: XX:XX:XX:XX:XX:04 → IP: 192.168.1.14 → Hostname: rpi-worker02
+MAC: XX:XX:XX:XX:XX:03 → IP: 192.168.1.13 → Hostname: rpi-cp03
+MAC: XX:XX:XX:XX:XX:04 → IP: 192.168.1.14 → Hostname: rpi-worker01
 ```
 
 ## Kubernetes Service Network
@@ -105,11 +105,11 @@ Plan how external traffic will reach your cluster:
 **Internal DNS** (optional but recommended):
 - Add entries in your router/DNS server:
   ```
-  rpi-cp01.local      → 192.168.1.11
-  rpi-cp02.local      → 192.168.1.12
-  rpi-worker01.local  → 192.168.1.13
-  rpi-worker02.local  → 192.168.1.14
-  k8s.local           → 192.168.1.11 (or VIP 192.168.1.10)
+  rpi-cp01.local     → 192.168.1.11
+  rpi-cp02.local     → 192.168.1.12
+  rpi-cp03.local     → 192.168.1.13
+  rpi-worker01.local → 192.168.1.14
+  k8s.local          → 192.168.1.11 (or VIP 192.168.1.10)
   ```
 
 **External DNS** (for internet access):
@@ -131,8 +131,8 @@ Internet
             |
             +--- [rpi-cp01]     192.168.1.11 (Control Plane + etcd)
             +--- [rpi-cp02]     192.168.1.12 (Control Plane + etcd)
-            +--- [rpi-worker01] 192.168.1.13 (Worker)
-            +--- [rpi-worker02] 192.168.1.14 (Worker)
+            +--- [rpi-cp03]     192.168.1.13 (Control Plane + etcd)
+            +--- [rpi-worker01] 192.168.1.14 (Worker)
 ```
 
 ## Security Considerations

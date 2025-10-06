@@ -113,7 +113,7 @@ source ~/.zshrc
 
 ## Step 6: Apply Configurations
 
-### Control Plane Nodes
+### Control Plane Nodes (3 nodes: .11, .12, .13)
 
 ```bash
 # First control plane
@@ -126,6 +126,13 @@ sleep 30
 # Second control plane
 talosctl apply-config --insecure \
   --nodes 192.168.1.12 \
+  --file ~/.talos-secrets/automation/controlplane.yaml
+
+sleep 30
+
+# Third control plane
+talosctl apply-config --insecure \
+  --nodes 192.168.1.13 \
   --file ~/.talos-secrets/automation/controlplane.yaml
 
 sleep 30
@@ -157,22 +164,17 @@ talosctl kubeconfig --force
 kubectl get nodes
 ```
 
-You should see both control plane nodes in `Ready` state.
+You should see all three control plane nodes in `Ready` state.
 
-## Step 9: Add Worker Nodes
+## Step 9: Add Worker Node
 
 ```bash
-# Worker 1
-talosctl apply-config --insecure \
-  --nodes 192.168.1.13 \
-  --file ~/.talos-secrets/automation/worker.yaml
-
-# Worker 2
+# Worker node (.14 only)
 talosctl apply-config --insecure \
   --nodes 192.168.1.14 \
   --file ~/.talos-secrets/automation/worker.yaml
 
-# Wait for nodes to join
+# Wait for node to join
 sleep 30
 
 # Verify all nodes
@@ -182,15 +184,16 @@ kubectl get nodes -o wide
 ## Step 10: Verify Cluster Health
 
 ```bash
-# Check all nodes
+# Check all nodes (should show 3 control-plane + 1 worker)
 kubectl get nodes
 
 # Check system pods
 kubectl get pods -n kube-system
 
-# Verify Talos services
+# Verify Talos services on all control plane nodes
 talosctl -n 192.168.1.11 services
 talosctl -n 192.168.1.12 services
+talosctl -n 192.168.1.13 services
 
 # Run health check script
 ./scripts/talos-health.sh

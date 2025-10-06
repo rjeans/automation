@@ -21,8 +21,8 @@ Production-grade Kubernetes cluster running on Raspberry Pi 4 hardware with Talo
 
 ### Hardware
 - 4x Raspberry Pi 4 (8GB RAM)
-- 2x Control Plane nodes (etcd + Kubernetes API)
-- 2x Worker nodes
+- 3x Control Plane nodes (192.168.1.11, .12, .13) - etcd + Kubernetes API
+- 1x Worker node (192.168.1.14)
 
 ### Software Stack
 - **OS**: Talos Linux (immutable, API-driven)
