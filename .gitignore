@@ -1,0 +1,46 @@
+# Secrets (all - encrypted and unencrypted)
+*.key
+*.pem
+secrets.yaml
+secrets.yml
+secrets.enc.yaml
+secrets.enc.yml
+talosconfig
+talosconfig.enc.yaml
+kubeconfig
+kubeconfig.enc.yaml
+controlplane.yaml
+worker.yaml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Helm
+charts/
+*.tgz
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backup files
+*.bak
+*.backup
+
+# Downloads
+downloads/
