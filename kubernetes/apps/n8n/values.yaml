@@ -96,14 +96,14 @@ postgresql:
 
   auth:
     username: "n8n"
-    password: "n8n-postgresql-password"  # TODO: Change for production
+    password: "a8703eef9d41739883f1ee4f67ec7d56f66f632647d93bf3d7df317627ab4f9e"
     database: "n8n"
 
 # Main n8n node configuration
 main:
   count: 1
 
-  editorBaseUrl: "http://n8n.local:30080/"
+  editorBaseUrl: "https://n8n.jeansy.org/"
 
   # Resources (Raspberry Pi optimized)
   resources:
@@ -125,7 +125,7 @@ main:
 
   # Extra environment variables
   extraEnvVars:
-    WEBHOOK_URL: "http://n8n.local:30080/"
+    WEBHOOK_URL: "https://n8n.jeansy.org/"
     GENERIC_TIMEZONE: "America/Los_Angeles"
     EXECUTIONS_DATA_SAVE_ON_SUCCESS: "all"
     EXECUTIONS_DATA_SAVE_ON_ERROR: "all"
@@ -194,7 +194,9 @@ nodes:
     reinstallMissingPackages: false
 
 # Node selector and tolerations (top-level)
-nodeSelector: {}
+# Pin to node .11 which has the external storage
+nodeSelector:
+  kubernetes.io/hostname: talos-7f2-ouz
 
 tolerations:
   - key: node-role.kubernetes.io/control-plane

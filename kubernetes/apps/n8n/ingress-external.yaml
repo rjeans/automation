@@ -1,0 +1,23 @@
+# External ingress for n8n via Cloudflare Tunnel
+# Handles traffic from n8n.jeansy.org
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: n8n-external
+  namespace: n8n
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.priority: "10"  # Higher priority than catch-all
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: n8n.jeansy.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: n8n
+            port:
+              number: 5678
