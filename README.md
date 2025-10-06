@@ -19,6 +19,8 @@ Production-grade Kubernetes cluster running on Raspberry Pi 4 hardware with Talo
    - [Storage (Local Path Provisioner)](./docs/03-storage-local-path.md)
    - [Ingress (Traefik)](./docs/05-ingress-traefik.md)
    - [TLS Certificates (cert-manager)](./docs/06-cert-manager.md)
+6. **Applications**:
+   - [n8n Workflow Automation](./docs/07-n8n-deployment.md)
 
 ## 🏗️ Architecture
 
@@ -183,6 +185,7 @@ helm template my-release chart/ -f values.yaml
 - [04 - PoE HAT Configuration](./docs/04-poe-hat-configuration.md) - Custom Talos image with fan control
 - [05 - Ingress (Traefik)](./docs/05-ingress-traefik.md) - HTTP/HTTPS routing and load balancing
 - [06 - cert-manager](./docs/06-cert-manager.md) - Automatic TLS certificate management
+- [07 - n8n Deployment](./docs/07-n8n-deployment.md) - Workflow automation platform with PostgreSQL
 - [Security Remediation](./SECURITY-REMEDIATION.md) - Security best practices and lessons learned
 
 ## 🛠️ Tools Required
@@ -210,7 +213,7 @@ This project is for personal use. Use at your own risk.
 
 ## 📈 Current Status
 
-**Iteration**: 2 - Core Services
+**Iteration**: 4 - Applications
 **Last Updated**: 2025-10-06
 
 - ✅ Repository structure created
@@ -221,7 +224,7 @@ This project is for personal use. Use at your own risk.
   - ✅ Storage (Local Path Provisioner with 1TB SSD)
   - ✅ Ingress (Traefik v3.2.2)
   - ✅ cert-manager (v1.16.2)
-- ⬜ n8n deployed
+- ✅ n8n deployed (v1.113.3 with PostgreSQL)
 - ⬜ Monitoring deployed
 
 See [ROADMAP.md](./ROADMAP.md) for detailed progress.

@@ -1,0 +1,201 @@
+# n8n Helm Chart Configuration
+# Chart: community-charts/n8n v1.15.12
+# App Version: n8n v1.113.3
+# Optimized for Raspberry Pi 4 cluster with Talos Linux
+
+# Image configuration
+image:
+  repository: n8nio/n8n
+  pullPolicy: IfNotPresent
+
+# Deployment strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+# Pod security
+podSecurityContext:
+  fsGroup: 1000
+  fsGroupChangePolicy: "OnRootMismatch"
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  privileged: false
+  runAsUser: 1000
+  runAsGroup: 1000
+
+# Service configuration
+service:
+  enabled: true
+  type: ClusterIP
+  port: 5678
+  name: http
+
+# Logging
+log:
+  level: info
+  output:
+    - console
+
+# Database configuration
+db:
+  type: postgresdb
+  logging:
+    enabled: false
+
+  postgresdb:
+    poolSize: 2
+    connectionTimeout: 20000
+    idleConnectionTimeout: 30000
+    schema: public
+    ssl:
+      enabled: false
+
+# PostgreSQL subchart configuration
+postgresql:
+  enabled: true
+  architecture: standalone
+
+  image:
+    repository: bitnamilegacy/postgresql
+
+  primary:
+    service:
+      ports:
+        postgresql: 5432
+
+    persistence:
+      enabled: true
+      storageClass: "local-path"
+      size: 20Gi
+
+    # Resources (Raspberry Pi optimized)
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    # Node selector and tolerations for control plane
+    nodeSelector:
+      kubernetes.io/hostname: talos-7f2-ouz  # Node .11 with storage
+
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+
+  auth:
+    username: "n8n"
+    password: "n8n-postgresql-password"  # TODO: Change for production
+    database: "n8n"
+
+# Main n8n node configuration
+main:
+  count: 1
+
+  editorBaseUrl: "http://n8n.local:30080/"
+
+  # Resources (Raspberry Pi optimized)
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  # Persistence for n8n data
+  persistence:
+    enabled: true
+    storageClass: "local-path"
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    annotations:
+      helm.sh/resource-policy: keep
+
+  # Extra environment variables
+  extraEnvVars:
+    WEBHOOK_URL: "http://n8n.local:30080/"
+    GENERIC_TIMEZONE: "America/Los_Angeles"
+    EXECUTIONS_DATA_SAVE_ON_SUCCESS: "all"
+    EXECUTIONS_DATA_SAVE_ON_ERROR: "all"
+    EXECUTIONS_DATA_SAVE_ON_PROGRESS: "true"
+    EXECUTIONS_TIMEOUT: "3600"
+    N8N_DIAGNOSTICS_ENABLED: "false"
+
+  # Probes with initial delay for slow Raspberry Pi startup
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: http
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /healthz/readiness
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  affinity: {}
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    # Use staging issuer initially, switch to production after testing
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+
+  hosts:
+    - host: n8n.local  # TODO: Change to your domain
+      paths:
+        - path: /
+          pathType: Prefix
+
+  tls:
+    - secretName: n8n-tls
+      hosts:
+        - n8n.local  # TODO: Change to your domain
+
+# Disable Sentry telemetry
+sentry:
+  enabled: false
+
+# Disable diagnostics
+diagnostics:
+  enabled: false
+
+# External modules (disabled for security)
+nodes:
+  builtin:
+    enabled: false
+  external:
+    allowAll: false
+    reinstallMissingPackages: false
+
+# Node selector and tolerations (top-level)
+nodeSelector: {}
+
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+
+affinity: {}
