@@ -76,37 +76,6 @@ sudo mv kubectl /usr/local/bin/
 kubectl version --client
 ```
 
-### Install SOPS (for secrets encryption)
-
-**macOS**:
-```bash
-brew install sops
-```
-
-**Linux**:
-```bash
-# Download latest release from https://github.com/mozilla/sops/releases
-wget https://github.com/mozilla/sops/releases/download/v3.8.1/sops-v3.8.1.linux.amd64
-chmod +x sops-v3.8.1.linux.amd64
-sudo mv sops-v3.8.1.linux.amd64 /usr/local/bin/sops
-```
-
-### Install age (for SOPS encryption)
-
-**macOS**:
-```bash
-brew install age
-```
-
-**Linux**:
-```bash
-# Download from https://github.com/FiloSottile/age/releases
-wget https://github.com/FiloSottile/age/releases/download/v1.1.1/age-v1.1.1-linux-amd64.tar.gz
-tar xzf age-v1.1.1-linux-amd64.tar.gz
-sudo mv age/age /usr/local/bin/
-sudo mv age/age-keygen /usr/local/bin/
-```
-
 ### Install xz (for decompressing Talos images)
 
 **macOS**:
@@ -163,39 +132,26 @@ Before proceeding:
 - [ ] Network switch has power and ports work
 - [ ] SD cards are good quality and formatted
 
-## Security Preparation
+## Secret Storage Setup
 
-### Generate age Encryption Key
+**For personal use, we keep secrets local and out of git.**
 
-Create encryption key for SOPS:
+### Create Secure Secrets Directory
 
 ```bash
-# Generate key
-age-keygen -o age.key
+# Create directory outside the git repository
+mkdir -p ~/.talos-secrets/automation
 
-# Output will show public key like:
-# Public key: age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p
+# Set restrictive permissions
+chmod 700 ~/.talos-secrets
+chmod 700 ~/.talos-secrets/automation
 ```
 
 **Important**:
-- Store `age.key` securely (password manager, encrypted drive)
-- Add `age.key` to `.gitignore` (already done)
-- Back up the key - you cannot decrypt secrets without it
-- Share public key with team members who need to encrypt secrets
-
-### Create .sops.yaml Configuration
-
-```bash
-cat > .sops.yaml <<EOF
-creation_rules:
-  - path_regex: .*.enc.yaml$
-    age: age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p
-  - path_regex: talos/secrets/.*
-    age: age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p
-EOF
-```
-
-Replace the public key with your actual age public key.
+- Secrets stored locally, NOT in git
+- Protected by filesystem permissions
+- Backed up separately (encrypted external drive recommended)
+- Full disk encryption (FileVault/BitLocker) provides additional security
 
 ## Pre-flight Checklist
 
@@ -206,10 +162,9 @@ Before proceeding to Talos installation:
 - [ ] SD cards prepared (high quality, sufficient size)
 - [ ] `talosctl` installed and working
 - [ ] `kubectl` installed and working
-- [ ] `sops` and `age` installed
 - [ ] `xz` installed (for decompressing Talos images)
-- [ ] Age encryption key generated and backed up
-- [ ] `.sops.yaml` configured with public key
+- [ ] Secure secrets directory created (`~/.talos-secrets/automation`)
+- [ ] Full disk encryption enabled (FileVault/BitLocker)
 - [ ] Git repository initialized
 - [ ] Physical workspace organized with labels
 
@@ -224,4 +179,3 @@ Once all prerequisites are complete, proceed to:
 - [Talos Linux Documentation](https://www.talos.dev/latest/)
 - [Talos Raspberry Pi Guide](https://www.talos.dev/latest/talos-guides/install/single-board-computers/rpi_generic/)
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
-- [SOPS Documentation](https://github.com/mozilla/sops)

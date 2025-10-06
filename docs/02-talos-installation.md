@@ -115,30 +115,34 @@ All nodes should respond to ping requests, confirming they've booted successfull
 
 ## Step 5: Generate Talos Configuration
 
-Create cluster configuration files:
+**Create cluster configuration files in secure local storage (NOT in git):**
 
 ```bash
-# Navigate to project directory
-cd /Users/rich/Library/CloudStorage/Dropbox/Development/automation
-
-# Generate secrets and configs
-talosctl gen secrets -o talos/secrets/secrets.yaml
+# Generate secrets in secure directory
+talosctl gen secrets -o ~/.talos-secrets/automation/secrets.yaml
 
 # Generate machine configurations
 # Using first control plane IP as the cluster endpoint
 talosctl gen config talos-k8s-cluster https://192.168.1.11:6443 \
-  --with-secrets talos/secrets/secrets.yaml \
+  --with-secrets ~/.talos-secrets/automation/secrets.yaml \
   --output-types controlplane,worker,talosconfig \
-  --output talos/config/
+  --output ~/.talos-secrets/automation/
+
+# Set restrictive permissions
+chmod 600 ~/.talos-secrets/automation/*
 ```
 
-This creates:
-- `talos/config/controlplane.yaml` - Control plane node config
-- `talos/config/worker.yaml` - Worker node config
-- `talos/config/talosconfig` - talosctl client configuration
-- `talos/secrets/secrets.yaml` - Cluster secrets (DO NOT COMMIT unencrypted)
+This creates (in `~/.talos-secrets/automation/`):
+- `controlplane.yaml` - Control plane node config
+- `worker.yaml` - Worker node config
+- `talosconfig` - talosctl client configuration
+- `secrets.yaml` - Cluster secrets
 
-**Important**: The cluster endpoint (`https://192.168.1.11:6443`) should point to your first control plane node. For HA setups, you can use a VIP or load balancer IP instead.
+**Important**:
+- All files stored locally, NOT in git repository
+- Protected by filesystem permissions (600)
+- Backed up separately from git
+- The cluster endpoint (`https://192.168.1.11:6443`) points to your first control plane node
 
 ## Step 6: Customize Configuration (Optional)
 
@@ -226,8 +230,8 @@ EOF
 Before applying configurations, set up your talosctl client:
 
 ```bash
-# Set the talosconfig for the current session
-export TALOSCONFIG=/Users/rich/Library/CloudStorage/Dropbox/Development/automation/talos/config/talosconfig
+# Set the talosconfig for the current session (from secure directory)
+export TALOSCONFIG=~/.talos-secrets/automation/talosconfig
 
 # Configure endpoints (all cluster nodes for redundancy)
 talosctl config endpoint 192.168.1.11 192.168.1.12 192.168.1.13 192.168.1.14
@@ -239,7 +243,7 @@ talosctl config node 192.168.1.11
 **Important**: Add this to your shell profile so it persists across sessions:
 
 ```bash
-echo 'export TALOSCONFIG=/Users/rich/Library/CloudStorage/Dropbox/Development/automation/talos/config/talosconfig' >> ~/.zshrc
+echo 'export TALOSCONFIG=~/.talos-secrets/automation/talosconfig' >> ~/.zshrc
 source ~/.zshrc
 ```
 
@@ -253,7 +257,7 @@ Now apply configuration to your control plane nodes:
 # Apply to first control plane node (192.168.1.11)
 talosctl apply-config --insecure \
   --nodes 192.168.1.11 \
-  --file talos/config/controlplane.yaml
+  --file ~/.talos-secrets/automation/controlplane.yaml
 
 # Wait for node to apply config (~30 seconds)
 sleep 30
@@ -268,7 +272,7 @@ Apply to the second control plane node:
 # Apply to second control plane node (192.168.1.12)
 talosctl apply-config --insecure \
   --nodes 192.168.1.12 \
-  --file talos/config/controlplane.yaml
+  --file ~/.talos-secrets/automation/controlplane.yaml
 
 # Wait and verify
 sleep 30
@@ -339,12 +343,12 @@ Add worker nodes to the cluster:
 # Apply to worker node 1 (192.168.1.13)
 talosctl apply-config --insecure \
   --nodes 192.168.1.13 \
-  --file talos/config/worker.yaml
+  --file ~/.talos-secrets/automation/worker.yaml
 
 # Apply to worker node 2 (192.168.1.14)
 talosctl apply-config --insecure \
   --nodes 192.168.1.14 \
-  --file talos/config/worker.yaml
+  --file ~/.talos-secrets/automation/worker.yaml
 
 # Wait a bit for nodes to join
 sleep 30
@@ -379,35 +383,30 @@ talosctl version
 - System pods are running: `kube-flannel-*`, `kube-apiserver-*`, `kube-controller-manager-*`, `kube-scheduler-*`, `etcd-*`
 - etcd members shows both control plane nodes
 
-## Step 14: Encrypt and Commit Secrets
+## Step 14: Backup Secrets
 
-**IMPORTANT**: Never commit unencrypted secrets!
+**IMPORTANT**: Back up your secrets securely!
 
 ```bash
-# Encrypt cluster secrets
-sops --encrypt talos/secrets/secrets.yaml > talos/secrets/secrets.enc.yaml
+# Backup secrets to encrypted external drive
+cp -r ~/.talos-secrets/automation /Volumes/YourBackupDrive/talos-secrets-$(date +%Y%m%d)
 
-# Encrypt talosconfig (contains certificates and keys)
-sops --encrypt talos/config/talosconfig > talos/config/talosconfig.enc.yaml
-
-# Remove unencrypted files
-rm talos/secrets/secrets.yaml
-rm talos/config/talosconfig
-
-# Verify encrypted files exist
-ls -la talos/secrets/secrets.enc.yaml
-ls -la talos/config/talosconfig.enc.yaml
-
-# Add to git and commit
-git add -A
-git commit -m "Add encrypted Talos cluster configuration
-
-- 4-node cluster: 2 control plane, 2 worker nodes
-- Encrypted secrets and talosconfig with SOPS
-- All nodes running and healthy"
+# Or use Time Machine / other backup solution
+# Ensure your backup is encrypted
 ```
 
-**Note**: The `.sops.yaml` file automatically provides the age key, so you don't need to specify it manually. Keep your `age.key` file secure and backed up - you cannot decrypt these files without it!
+**Backup checklist:**
+- ✅ Secrets directory (`~/.talos-secrets/automation/`)
+- ✅ All machine configs (controlplane.yaml, worker.yaml)
+- ✅ Talosconfig for cluster access
+- ✅ Secrets file (secrets.yaml)
+- ✅ Verify backup is encrypted
+- ✅ Test restore procedure
+
+**Note**: These secrets are needed to:
+- Manage the cluster
+- Add new nodes
+- Recover from disasters
 
 ## Step 15: Create Helper Scripts
 

@@ -59,38 +59,37 @@ automation/
 
 ## 🔐 Security
 
-### Secrets Management
-- All secrets encrypted with [SOPS](https://github.com/mozilla/sops) and [age](https://github.com/FiloSottile/age)
-- Encryption key stored outside repository
-- Only encrypted files (`.enc.yaml`) committed to Git
+### Secrets Management (Personal Use)
+- **All secrets stored locally** in `~/.talos-secrets/automation/`
+- **NOT in git repository** - maximum security
+- Protected by filesystem permissions (600)
+- Full disk encryption (FileVault/BitLocker) for additional security
+- Regular backups to encrypted external drive
 
-### Decrypt Secrets
-```bash
-# Set age key location
-export SOPS_AGE_KEY_FILE=~/path/to/age.key
-
-# Decrypt a file
-sops -d talos/secrets/secrets.enc.yaml > talos/secrets/secrets.yaml
-
-# Edit encrypted file directly
-sops talos/secrets/secrets.enc.yaml
+### Secret Files Location
+```
+~/.talos-secrets/automation/
+├── secrets.yaml          # Cluster secrets
+├── controlplane.yaml     # Control plane config
+├── worker.yaml           # Worker config
+└── talosconfig           # Client certificates
 ```
 
-### Encrypt New Secrets
-```bash
-# Encrypt a file
-sops -e secrets.yaml > secrets.enc.yaml
-```
+**Why local-only?**
+- No team access needed
+- Simpler than encryption
+- Filesystem permissions sufficient
+- Backed up separately from git
 
 ## 🚀 Common Operations
 
 ### Access Cluster
 ```bash
-# Set talosconfig
-export TALOSCONFIG=$(pwd)/talos/config/talosconfig
+# Set talosconfig (from secure directory)
+export TALOSCONFIG=~/.talos-secrets/automation/talosconfig
 
 # Get kubeconfig
-talosctl kubeconfig --nodes 192.168.1.101
+talosctl kubeconfig
 
 # Use kubectl
 kubectl get nodes
@@ -109,7 +108,7 @@ kubectl get pods -A
 ### Update Node Configuration
 ```bash
 # Edit and apply configuration
-talosctl apply-config --nodes <node-ip> --file talos/config/controlplane.yaml
+talosctl apply-config --nodes <node-ip> --file ~/.talos-secrets/automation/controlplane.yaml
 ```
 
 ### View Logs
@@ -183,8 +182,6 @@ helm template my-release chart/ -f values.yaml
 
 - `talosctl` - Talos Linux management
 - `kubectl` - Kubernetes management
-- `sops` - Secrets encryption
-- `age` - Encryption key management
 - `helm` - Kubernetes package manager *(coming soon)*
 - `flux` or `argocd` - GitOps *(coming soon)*
 
