@@ -1,0 +1,25 @@
+# Catch-all ingress for n8n (no hostname required)
+# Use this for local testing without /etc/hosts configuration
+# Supports both HTTP and HTTPS with self-signed certificate
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: n8n-catchall
+  namespace: n8n
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.priority: "1"  # Lower priority than host-specific
+spec:
+  ingressClassName: traefik
+  tls:
+  - secretName: n8n-tls-selfsigned
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: n8n
+            port:
+              number: 5678

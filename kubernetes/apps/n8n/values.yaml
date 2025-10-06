@@ -159,9 +159,11 @@ ingress:
   enabled: true
   className: traefik
   annotations:
-    # Use staging issuer initially, switch to production after testing
-    cert-manager.io/cluster-issuer: letsencrypt-staging
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    # HTTP only for local access (no TLS with .local domain)
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    # Enable TLS when using real domain:
+    # cert-manager.io/cluster-issuer: letsencrypt-staging
+    # traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
 
   hosts:
     - host: n8n.local  # TODO: Change to your domain
@@ -169,10 +171,11 @@ ingress:
         - path: /
           pathType: Prefix
 
-  tls:
-    - secretName: n8n-tls
-      hosts:
-        - n8n.local  # TODO: Change to your domain
+  tls: []
+    # Enable TLS when using real domain:
+    # - secretName: n8n-tls
+    #   hosts:
+    #     - n8n.yourdomain.com
 
 # Disable Sentry telemetry
 sentry:
