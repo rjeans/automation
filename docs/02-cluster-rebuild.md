@@ -100,8 +100,8 @@ chmod 600 ~/.talos-secrets/automation/*
 # Set talosconfig
 export TALOSCONFIG=~/.talos-secrets/automation/talosconfig
 
-# Configure endpoints
-talosctl config endpoint 192.168.1.11 192.168.1.12 192.168.1.13 192.168.1.14
+# Configure endpoints (control plane nodes only - they run Talos API)
+talosctl config endpoint 192.168.1.11 192.168.1.12 192.168.1.13
 
 # Set default node
 talosctl config node 192.168.1.11
@@ -110,6 +110,8 @@ talosctl config node 192.168.1.11
 echo 'export TALOSCONFIG=~/.talos-secrets/automation/talosconfig' >> ~/.zshrc
 source ~/.zshrc
 ```
+
+**Note**: Endpoints are set to control plane nodes only (.11, .12, .13) because they run the Talos API. You can still target the worker node (.14) using `talosctl -n 192.168.1.14 <command>` when needed.
 
 ## Step 6: Apply Configurations
 
