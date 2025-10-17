@@ -104,21 +104,23 @@ automation/
 - [x] Test TLS termination at Cloudflare edge
 - [x] Simplified ingress (removed cert-manager complexity)
 
-### 2.4 GitOps Setup
+### 2.4 GitOps Setup ✅ COMPLETE
 **Using FluxCD for declarative cluster management**
 
-See detailed implementation guide: [docs/GITOPS-ROADMAP.md](./docs/GITOPS-ROADMAP.md)
-Quick start: [docs/GITOPS-QUICKSTART.md](./docs/GITOPS-QUICKSTART.md)
+See implementation details: [docs/GITOPS-IMPLEMENTATION-SUMMARY.md](./docs/GITOPS-IMPLEMENTATION-SUMMARY.md)
+Guides: [ROADMAP](./docs/GITOPS-ROADMAP.md) | [QUICKSTART](./docs/GITOPS-QUICKSTART.md) | [ARCHITECTURE](./docs/GITOPS-ARCHITECTURE.md)
 
-- [ ] Install Flux with GitHub bootstrap
-- [ ] Define Helm repository sources
-- [ ] Migrate Traefik to Flux management (HelmRelease)
-- [ ] Migrate Metrics Server to Flux management
-- [ ] Migrate Cloudflare Tunnel to Flux management
-- [ ] Migrate n8n to Flux management (HelmRelease)
-- [ ] Migrate cluster-dashboard to Flux management
+- [x] Install Flux with GitHub bootstrap
+- [x] Define Helm repository sources (Traefik, Metrics Server, n8n)
+- [x] Migrate Traefik to Flux management (HelmRelease v33.2.1)
+- [x] Migrate Metrics Server to Flux management (HelmRelease v3.13.0)
+- [x] Migrate Cloudflare Tunnel to Flux management (Kustomization)
+- [x] Migrate n8n to Flux management (HelmRelease v1.15.12)
+- [x] Migrate cluster-dashboard to Flux management (Kustomization)
+- [x] Add dashboard.monitor labels to all components
+- [x] Test GitOps workflow (label additions applied automatically)
 - [ ] Set up SOPS for secrets encryption
-- [ ] Configure health checks and notifications
+- [ ] Configure Slack notifications
 - [ ] Test complete cluster rebuild from Git
 
 ---

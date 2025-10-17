@@ -32,35 +32,47 @@ Production-grade Kubernetes cluster running on Raspberry Pi 4 hardware with Talo
 ### Software Stack
 - **OS**: Talos Linux (immutable, API-driven)
 - **Orchestration**: Kubernetes
-- **GitOps**: FluxCD or ArgoCD
-- **Storage**: Longhorn or Rook-Ceph
-- **Ingress**: Traefik or NGINX
-- **Certificates**: cert-manager
-- **Monitoring**: Prometheus, Grafana, Loki
-- **Automation**: n8n
+- **GitOps**: FluxCD ✅ (Deployed - manages entire cluster)
+- **Storage**: Local Path Provisioner ✅
+- **Ingress**: Traefik ✅
+- **External Access**: Cloudflare Tunnel ✅
+- **Monitoring**: Cluster Dashboard ✅ | Prometheus, Grafana ⬜
+- **Automation**: n8n ✅
 
 ## 📁 Repository Structure
 
 ```
 automation/
-├── talos/
-│   ├── config/            # Talos machine configurations
-│   ├── patches/           # Configuration patches for customization
-│   └── secrets/           # Encrypted secrets (SOPS with age)
-├── kubernetes/
-│   ├── core/              # Core cluster services (CNI, storage, ingress)
-│   ├── apps/              # Application deployments
-│   └── n8n/               # n8n workflow automation platform
-├── terraform/             # Future: cloud resource provisioning
-├── docs/                  # Documentation
-│   ├── 01-prerequisites.md
-│   ├── 02-talos-installation.md
-│   ├── network-plan.md
+├── flux/                  # ⚡ GitOps - Source of Truth for cluster state
+│   └── clusters/talos/
+│       ├── flux-system/   # Flux controllers
+│       ├── sources/       # Helm repositories, Git sources
+│       ├── infrastructure/# Core services (Traefik, Metrics Server, Cloudflare)
+│       └── apps/          # Applications (n8n, cluster-dashboard)
+│
+├── kubernetes/            # 📁 Reference and development (see kubernetes/README.md)
+│   ├── core/              # Original manifests (archived, not used by Flux)
+│   └── apps/
+│       ├── n8n/           # n8n configs (copied to flux/)
+│       └── cluster-dashboard/
+│           ├── app/       # 🔧 Go application source code
+│           └── chart/     # Helm chart (reference)
+│
+├── talos/                 # Talos machine configurations
+│   ├── config/            # Machine configs (stored locally for security)
+│   └── patches/           # Configuration patches
+│
+├── docs/                  # 📚 Documentation
+│   ├── GITOPS-*.md        # GitOps implementation guides
+│   ├── 00-07-*.md         # Setup guides
 │   └── ...
-├── scripts/               # Automation and helper scripts
-├── ROADMAP.md            # Project roadmap and phases
-└── README.md             # This file
+│
+├── ROADMAP.md             # Project roadmap and status
+└── README.md              # This file
 ```
+
+**⚠️ Important**: All cluster resources are managed by Flux from `flux/clusters/talos/`.
+The `kubernetes/` directory is kept for reference only. See [kubernetes/README.md](./kubernetes/README.md).
 
 ## 🔐 Security
 
@@ -88,41 +100,45 @@ automation/
 
 ## 🚀 Common Operations
 
-### Access Cluster
+### GitOps Workflow (Primary Method)
 ```bash
-# Set talosconfig (from secure directory)
-export TALOSCONFIG=~/.talos-secrets/automation/talosconfig
+# Make changes to manifests
+vim flux/clusters/talos/apps/n8n/helmrelease.yaml
 
-# Get kubeconfig
-talosctl kubeconfig
+# Commit and push
+git add flux/
+git commit -m "Update n8n configuration"
+git push
 
-# Use kubectl
-kubectl get nodes
+# Flux automatically applies within 1 minute!
+# Or force immediate reconciliation:
+flux reconcile kustomization flux-system --with-source
 ```
 
 ### Check Cluster Health
 ```bash
-# Talos health check
-talosctl health
+# Flux status (all resources managed by GitOps)
+flux get all -A
 
 # Kubernetes status
 kubectl get nodes
 kubectl get pods -A
-```
 
-### Update Node Configuration
-```bash
-# Edit and apply configuration
-talosctl apply-config --nodes <node-ip> --file ~/.talos-secrets/automation/controlplane.yaml
+# Talos health check
+export TALOSCONFIG=~/.talos-secrets/automation/talosconfig
+talosctl health
 ```
 
 ### View Logs
 ```bash
+# Flux logs (see GitOps activity)
+flux logs --all-namespaces --follow
+
+# Application logs
+kubectl logs -f -n n8n deployment/n8n
+
 # Talos system logs
 talosctl logs -f -n <node-ip> kubelet
-
-# Kubernetes pod logs
-kubectl logs -f -n kube-system <pod-name>
 ```
 
 ## 📊 Monitoring
@@ -192,8 +208,8 @@ helm template my-release chart/ -f values.yaml
 
 - `talosctl` - Talos Linux management
 - `kubectl` - Kubernetes management
-- `helm` - Kubernetes package manager *(coming soon)*
-- `flux` or `argocd` - GitOps *(coming soon)*
+- `flux` - GitOps CLI (installed and active)
+- `helm` - Kubernetes package manager (optional - Flux manages Helm releases)
 
 ## 🤝 Contributing
 
