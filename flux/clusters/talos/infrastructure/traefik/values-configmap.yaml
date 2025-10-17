@@ -1,0 +1,149 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-values
+  namespace: traefik
+data:
+  values.yaml: |
+    # Traefik Ingress Controller Configuration
+    # For Talos Kubernetes cluster on Raspberry Pi
+    
+    # Global options
+    globalArguments:
+      - "--global.checknewversion=false"
+      - "--global.sendanonymoususage=false"
+    
+    # Deployment configuration
+    deployment:
+      enabled: true
+      replicas: 2  # HA across control plane nodes
+      podAnnotations: {}
+    
+    # Service configuration
+    service:
+      enabled: true
+      type: NodePort  # Use NodePort for home lab (can upgrade to LoadBalancer with MetalLB later)
+      annotations: {}
+      spec:
+        externalTrafficPolicy: Local  # Preserve source IP
+    
+    # Ports configuration
+    ports:
+      web:
+        port: 80
+        exposedPort: 80
+        nodePort: 30080  # Access via http://<any-node-ip>:30080
+        protocol: TCP
+      websecure:
+        port: 443
+        exposedPort: 443
+        nodePort: 30443  # Access via https://<any-node-ip>:30443
+        protocol: TCP
+        tls:
+          enabled: true
+      traefik:
+        port: 9000
+        protocol: TCP
+    
+    # Logs
+    logs:
+      general:
+        level: INFO
+      access:
+        enabled: true
+    
+    # Dashboard
+    ingressRoute:
+      dashboard:
+        enabled: true  # Enable dashboard (accessible via IngressRoute)
+        matchRule: Host(`traefik.local`)
+        entryPoints: ["web"]
+    
+    # Providers
+    providers:
+      kubernetesCRD:
+        enabled: true
+        allowCrossNamespace: true
+      kubernetesIngress:
+        enabled: true
+        publishedService:
+          enabled: true
+    
+    # Resource limits (suitable for Raspberry Pi)
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    
+    # Node selection and tolerations
+    nodeSelector: {}
+    
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+    
+    # Affinity - spread across nodes for HA
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                      - traefik
+              topologyKey: kubernetes.io/hostname
+    
+    # Pod Disruption Budget
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
+    
+    # Security context
+    podSecurityContext:
+      fsGroup: 65532
+      runAsGroup: 65532
+      runAsNonRoot: true
+      runAsUser: 65532
+    
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+      runAsGroup: 65532
+      runAsNonRoot: true
+      runAsUser: 65532
+      seccompProfile:
+        type: RuntimeDefault
+    
+    # Persistence for certificates (if using Let's Encrypt later)
+    persistence:
+      enabled: false  # Will enable later with cert-manager
+    
+    # Additional arguments
+    additionalArguments:
+      - "--ping=true"
+      - "--ping.entrypoint=traefik"
+    
+    # Health checks
+    readinessProbe:
+      failureThreshold: 1
+      initialDelaySeconds: 2
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 2
+    
+    livenessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 2
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 2
