@@ -1,0 +1,24 @@
+# External ingress for n8n via Cloudflare Tunnel
+# Handles traffic from n8n.jeansy.org
+# TLS is handled by Cloudflare - no cert needed in Kubernetes
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: n8n-external
+  namespace: n8n
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.priority: "10"
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: n8n.jeansy.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: n8n
+            port:
+              number: 5678
