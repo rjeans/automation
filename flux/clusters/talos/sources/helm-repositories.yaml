@@ -23,4 +23,4 @@ metadata:
   namespace: flux-system
 spec:
   interval: 1h
-  url: https://8gears.container-registry.com/chartrepo/library
+  url: https://8gears.github.io/n8n-helm-chart
