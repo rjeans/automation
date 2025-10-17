@@ -6,6 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: cluster-dashboard
     app.kubernetes.io/component: dashboard
+    dashboard.monitor: "true"
 spec:
   replicas: 2
   strategy:
