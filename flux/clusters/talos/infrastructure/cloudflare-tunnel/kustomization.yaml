@@ -1,0 +1,6 @@
+# Cloudflare Tunnel - Managed by Flux
+# This references the existing manifests in kubernetes/core/cloudflare-tunnel
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../../kubernetes/core/cloudflare-tunnel
