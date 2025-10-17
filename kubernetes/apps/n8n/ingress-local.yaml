@@ -1,18 +1,21 @@
-# External ingress for n8n via Cloudflare Tunnel
-# Handles traffic from n8n.jeansy.org
-# TLS is handled by Cloudflare - no cert needed in Kubernetes
+# Local ingress for n8n via HAProxy
+# Handles traffic from n8n-local.jeansy.org (local network only)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: n8n-external
+  name: n8n-local
   namespace: n8n
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.priority: "10"
+    traefik.ingress.kubernetes.io/router.priority: "10"  # Higher priority than catch-all
 spec:
   ingressClassName: traefik
+  tls:
+  - secretName: n8n-tls-selfsigned
+    hosts:
+    - n8n-local.jeansy.org
   rules:
-  - host: n8n.jeansy.org
+  - host: n8n-local.jeansy.org
     http:
       paths:
       - path: /

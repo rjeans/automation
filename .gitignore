@@ -44,3 +44,29 @@ temp/
 
 # Downloads
 downloads/
+
+# Go development
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+vendor/
+
+# Docker/Container images
+*.tar
+*.tar.gz
+
+# Cloudflare Tunnel tokens
+*tunnel-token*
+cloudflare-token*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Playwright MCP
+.playwright-mcp/

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raspberry Pi Kubernetes Cluster</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #fafafa;
+            --text: #1a1a1a;
+            --text-muted: #666;
+            --border: #e0e0e0;
+            --link: #0000ee;
+            --success: #2d7a2d;
+            --error: #c41e3a;
+        }
+
+        /* Dark theme - activated via ?theme=dark */
+        [data-theme="dark"] {
+            --bg: #0a0a0a;
+            --text: #e0e0e0;
+            --text-muted: #999;
+            --border: #333;
+            --link: #4d9fff;
+            --success: #4ade80;
+            --error: #f87171;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 0;
+        }
+
+        .header .subtitle {
+            display: none;
+        }
+
+        .tech-badges {
+            display: none;
+        }
+
+        .badge {
+            display: none;
+        }
+
+        .metrics-container {
+            margin-bottom: 40px;
+        }
+
+        .loading {
+            color: var(--text-muted);
+            font-size: 0.9em;
+        }
+
+        .spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { content: "|"; }
+            25% { content: "/"; }
+            50% { content: "-"; }
+            75% { content: "\\"; }
+            100% { content: "|"; }
+        }
+
+        .spinner::before {
+            content: "|";
+        }
+
+        .footer {
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+            margin-top: 40px;
+            font-size: 0.85em;
+            color: var(--text-muted);
+        }
+
+        .footer a {
+            color: var(--link);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+
+            .header h1 {
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Raspberry Pi Kubernetes Cluster</h1>
+            <p class="subtitle">Powered by Talos Linux</p>
+
+            <div class="tech-badges">
+                <span class="badge">Talos Linux</span>
+                <span class="badge">Kubernetes</span>
+                <span class="badge">Raspberry Pi 4</span>
+                <span class="badge">Traefik</span>
+                <span class="badge">n8n</span>
+                <span class="badge">Cloudflare Tunnel</span>
+            </div>
+        </div>
+
+        <div class="metrics-container"
+             hx-get="/metrics/html"
+             hx-trigger="load, every 30s"
+             hx-swap="innerHTML">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading cluster metrics...</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                Built with Go, htmx, and Kubernetes APIs |
+                <a href="https://github.com/rjeans/automation/tree/main/kubernetes/apps/cluster-dashboard" target="_blank">View Source</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Passive theme support - reads ?theme=dark or ?theme=light from URL
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const theme = urlParams.get('theme');
+
+            if (theme === 'dark' || theme === 'light') {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        })();
+    </script>
+</body>
+</html>

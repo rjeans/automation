@@ -99,10 +99,10 @@ automation/
 - [ ] Configure automated backups
 
 ### 2.3 Ingress & TLS
-- [ ] Deploy ingress controller (Traefik or NGINX)
-- [ ] Install cert-manager
-- [ ] Configure Let's Encrypt issuer
-- [ ] Test TLS certificate issuance
+- [x] Deploy ingress controller (Traefik)
+- [x] Configure Cloudflare Tunnel for external TLS (replaces cert-manager)
+- [x] Test TLS termination at Cloudflare edge
+- [x] Simplified ingress (removed cert-manager complexity)
 
 ### 2.4 GitOps Setup
 **Choose**: FluxCD or ArgoCD
@@ -165,13 +165,13 @@ automation/
 
 ### 4.3 n8n Installation
 **Using 8gears Helm Chart**:
-- [ ] Add n8n Helm repository
-- [ ] Create custom values file
-- [ ] Configure database connection
-- [ ] Set up persistent storage for workflows
-- [ ] Deploy n8n with Helm
-- [ ] Configure ingress with TLS
-- [ ] Test web UI access
+- [x] Add n8n Helm repository
+- [x] Create custom values file
+- [x] Configure database connection
+- [x] Set up persistent storage for workflows
+- [x] Deploy n8n with Helm
+- [x] Configure ingress with Cloudflare Tunnel
+- [x] Test web UI access at https://n8n.jeansy.org
 
 ### 4.4 n8n Production Configuration
 - [ ] Generate and store encryption key
@@ -226,7 +226,7 @@ automation/
 
 ### **Iteration 2: Core Infrastructure** (2-3 days)
 - Deploy CNI and persistent storage
-- Set up ingress controller and cert-manager
+- Set up ingress controller and Cloudflare Tunnel
 - Implement GitOps (FluxCD or ArgoCD)
 - Migrate infrastructure to GitOps management
 
@@ -261,7 +261,7 @@ automation/
 
 ### Security
 - ✅ Secrets encrypted in Git (SOPS)
-- ✅ TLS everywhere (cert-manager)
+- ✅ TLS everywhere (Cloudflare Tunnel)
 - ✅ Network segmentation (NetworkPolicies)
 - ✅ RBAC and pod security standards
 - ✅ Minimal attack surface (Talos Linux)

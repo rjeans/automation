@@ -1,0 +1,370 @@
+{{define "metrics.html"}}
+<style>
+    h2 {
+        font-size: 1em;
+        font-weight: bold;
+        margin: 0 0 12px 0;
+    }
+
+    .section {
+        margin-bottom: 32px;
+    }
+
+    .section-header {
+        margin-bottom: 12px;
+        font-size: 1em;
+        font-weight: bold;
+    }
+
+    .section-title {
+        display: inline;
+        font-weight: bold;
+    }
+
+    .section-icon {
+        display: none;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px 40px;
+        margin-bottom: 16px;
+    }
+
+    .info-item {
+        font-size: 0.9em;
+    }
+
+    .info-label {
+        color: var(--text-muted);
+        display: inline;
+    }
+
+    .info-label::after {
+        content: ": ";
+    }
+
+    .info-value {
+        display: inline;
+        color: var(--text);
+    }
+
+    @media (max-width: 600px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .status-indicator {
+        display: inline;
+    }
+
+    .status-healthy::before {
+        content: "[✓] ";
+        color: var(--success);
+    }
+
+    .status-warning::before {
+        content: "[!] ";
+        color: var(--text-muted);
+    }
+
+    .status-error::before {
+        content: "[✗] ";
+        color: var(--error);
+    }
+
+    .progress-bar {
+        display: inline-block;
+        width: 200px;
+        border: 1px solid var(--border);
+        height: 12px;
+        position: relative;
+        margin-left: 8px;
+        vertical-align: middle;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: var(--text);
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+
+    .progress-text {
+        display: inline;
+        margin-left: 8px;
+        font-size: 0.9em;
+    }
+
+    .node-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        font-size: 0.85em;
+    }
+
+    .node-table th {
+        text-align: left;
+        padding: 8px 12px 8px 0;
+        font-weight: normal;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .node-table td {
+        padding: 8px 12px 8px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .node-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .app-list {
+        display: block;
+    }
+
+    .app-card {
+        margin-bottom: 12px;
+        font-size: 0.9em;
+    }
+
+    .app-name {
+        display: inline;
+        font-weight: normal;
+    }
+
+    .app-status {
+        display: inline;
+        color: var(--text-muted);
+    }
+
+    .app-status::before {
+        content: " - ";
+    }
+
+    .timestamp {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+        font-size: 0.85em;
+        color: var(--text-muted);
+    }
+</style>
+
+<!-- Hardware Section -->
+<div class="section">
+    <div class="section-header">
+        <span class="section-icon">🔧</span>
+        <h2 class="section-title">Hardware Status</h2>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Cluster Configuration</div>
+            <div class="info-value">
+                <span class="status-indicator {{if .Hardware.AllNodesReady}}status-healthy{{else}}status-error{{end}}"></span>
+                {{.Hardware.NodeCount}} Nodes
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Control Planes</div>
+            <div class="info-value">{{.Hardware.ControlPlanes}} / {{.Hardware.NodeCount}}</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Worker Nodes</div>
+            <div class="info-value">{{.Hardware.Workers}} / {{.Hardware.NodeCount}}</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Total Memory</div>
+            <div class="info-value">{{.Hardware.TotalMemory}}</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">CPU Architecture</div>
+            <div class="info-value">{{.Hardware.TotalCPU}}</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Storage</div>
+            <div class="info-value">{{.Hardware.Storage}}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Cluster Nodes Section -->
+{{if .Hardware.NodeDetails}}
+<div class="section">
+    <div class="section-header">
+        <h2 class="section-title">Cluster Nodes</h2>
+    </div>
+
+    <table class="node-table">
+        <thead>
+            <tr>
+                <th>Node</th>
+                <th>IP Address</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>CPU Usage</th>
+                <th>Memory Usage</th>
+                <th>Temperature</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Hardware.NodeDetails}}
+            <tr>
+                <td>{{.Name}}</td>
+                <td>{{.IP}}</td>
+                <td>{{.Role}}</td>
+                <td>
+                    <span class="status-indicator {{if .IsReady}}status-healthy{{else}}status-error{{end}}"></span>
+                    {{.Status}}
+                </td>
+                <td>{{if gt .CPUUsage 0.0}}{{printf "%.1f" .CPUUsage}}%{{else}}N/A{{end}}</td>
+                <td>{{if gt .MemoryUsage 0.0}}{{printf "%.1f" .MemoryUsage}}%{{else}}N/A{{end}}</td>
+                <td>{{if gt .Temperature 0.0}}{{printf "%.1f" .Temperature}}°C{{else}}N/A{{end}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+
+<!-- Talos Section -->
+<div class="section">
+    <div class="section-header">
+        <span class="section-icon">🐧</span>
+        <h2 class="section-title">Talos Linux</h2>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Version</div>
+            <div class="info-value">{{.Talos.Version}}</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Cluster Health</div>
+            <div class="info-value">
+                <span class="status-indicator {{if .Talos.Healthy}}status-healthy{{else}}status-error{{end}}"></span>
+                {{.Talos.ClusterHealth}}
+            </div>
+        </div>
+
+        {{range $service, $status := .Talos.Services}}
+        <div class="info-item">
+            <div class="info-label">{{$service}}</div>
+            <div class="info-value">
+                <span class="status-indicator {{if eq $status "Running"}}status-healthy{{else}}status-error{{end}}"></span>
+                {{$status}}
+            </div>
+        </div>
+        {{end}}
+    </div>
+</div>
+
+<!-- Kubernetes Section -->
+<div class="section">
+    <div class="section-header">
+        <span class="section-icon">☸️</span>
+        <h2 class="section-title">Kubernetes</h2>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Version</div>
+            <div class="info-value">{{.Kubernetes.Version}}</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Control Plane</div>
+            <div class="info-value">
+                <span class="status-indicator {{if .Kubernetes.Healthy}}status-healthy{{else}}status-error{{end}}"></span>
+                {{.Kubernetes.ControlPlaneReady}} Ready
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Worker Nodes</div>
+            <div class="info-value">{{.Kubernetes.WorkerNodesReady}} Ready</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Running Pods</div>
+            <div class="info-value">{{.Kubernetes.RunningPods}} / {{.Kubernetes.TotalPods}}</div>
+        </div>
+
+        {{if gt .Kubernetes.FailedPods 0}}
+        <div class="info-item">
+            <div class="info-label">Failed Pods</div>
+            <div class="info-value">
+                <span class="status-indicator status-error"></span>
+                {{.Kubernetes.FailedPods}}
+            </div>
+        </div>
+        {{end}}
+    </div>
+
+    {{if gt .Kubernetes.CPUUsagePercent 0.0}}
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Cluster CPU Usage (Average)</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{printf "%.0f" .Kubernetes.CPUUsagePercent}}%"></div>
+            </div>
+            <div class="progress-text">{{printf "%.1f" .Kubernetes.CPUUsagePercent}}%</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Cluster Memory Usage (Average)</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{printf "%.0f" .Kubernetes.MemoryUsagePercent}}%"></div>
+            </div>
+            <div class="progress-text">{{printf "%.1f" .Kubernetes.MemoryUsagePercent}}%</div>
+        </div>
+    </div>
+    {{end}}
+</div>
+
+<!-- Applications Section -->
+<div class="section">
+    <div class="section-header">
+        <span class="section-icon">🚀</span>
+        <h2 class="section-title">Applications</h2>
+    </div>
+
+    <table class="node-table">
+        <thead>
+            <tr>
+                <th>Application</th>
+                <th>Namespace</th>
+                <th>Status</th>
+                <th>Replicas</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Applications}}
+            <tr>
+                <td>{{.Name}}</td>
+                <td>{{.Namespace}}</td>
+                <td>
+                    <span class="status-indicator {{if .Healthy}}status-healthy{{else}}status-error{{end}}"></span>
+                    {{.Status}}
+                </td>
+                <td>{{.ReadyReplicas}}/{{.DesiredReplicas}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<div class="timestamp">
+    Last updated: {{.UpdatedAt.Format "2006-01-02 15:04:05 MST"}}
+</div>
+{{end}}

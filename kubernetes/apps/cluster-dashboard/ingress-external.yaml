@@ -1,0 +1,23 @@
+# External ingress for cluster-dashboard via Cloudflare Tunnel
+# Handles traffic from dashboard.jeansy.org
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cluster-dashboard-external
+  namespace: cluster-dashboard
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.priority: "10"  # Higher priority than catch-all
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: dashboard.jeansy.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cluster-dashboard
+            port:
+              number: 80
