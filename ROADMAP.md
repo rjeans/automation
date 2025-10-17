@@ -105,12 +105,21 @@ automation/
 - [x] Simplified ingress (removed cert-manager complexity)
 
 ### 2.4 GitOps Setup
-**Choose**: FluxCD or ArgoCD
-- [ ] Install GitOps operator
-- [ ] Connect to this Git repository
-- [ ] Configure automated sync
-- [ ] Set up drift detection and alerts
-- [ ] Migrate core services to GitOps management
+**Using FluxCD for declarative cluster management**
+
+See detailed implementation guide: [docs/GITOPS-ROADMAP.md](./docs/GITOPS-ROADMAP.md)
+Quick start: [docs/GITOPS-QUICKSTART.md](./docs/GITOPS-QUICKSTART.md)
+
+- [ ] Install Flux with GitHub bootstrap
+- [ ] Define Helm repository sources
+- [ ] Migrate Traefik to Flux management (HelmRelease)
+- [ ] Migrate Metrics Server to Flux management
+- [ ] Migrate Cloudflare Tunnel to Flux management
+- [ ] Migrate n8n to Flux management (HelmRelease)
+- [ ] Migrate cluster-dashboard to Flux management
+- [ ] Set up SOPS for secrets encryption
+- [ ] Configure health checks and notifications
+- [ ] Test complete cluster rebuild from Git
 
 ---
 
