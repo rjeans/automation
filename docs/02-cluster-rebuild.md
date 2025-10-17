@@ -1,5 +1,16 @@
 # Cluster Rebuild Guide
 
+> **⚠️ IMPORTANT**: This guide covers **manual Talos cluster rebuild only**.
+>
+> **For complete disaster recovery with GitOps**, see [99-disaster-recovery-gitops.md](99-disaster-recovery-gitops.md)
+>
+> The disaster recovery guide covers:
+> - Automatic infrastructure restoration via Flux
+> - Automatic application deployment via GitOps
+> - Complete recovery procedure (~45 minutes)
+>
+> Use this manual guide only if you need to rebuild just the Talos layer without Flux.
+
 ## When to Rebuild
 
 Rebuild the cluster when:
@@ -248,7 +259,40 @@ talosctl -n <node-ip> logs kubelet
 
 ## Post-Rebuild Tasks
 
-After successful rebuild:
+After successful Talos rebuild, you have two options:
+
+### Option A: GitOps Deployment (Recommended)
+
+Deploy all infrastructure and applications automatically via Flux:
+
+```bash
+# Follow the GitOps disaster recovery guide
+# See: docs/99-disaster-recovery-gitops.md
+
+# Quick summary:
+# 1. Bootstrap Flux (5 minutes)
+flux bootstrap github --owner=rjeans --repository=automation ...
+
+# 2. Restore secrets (5 minutes)
+kubectl create secret generic talos-config -n cluster-dashboard ...
+kubectl create secret generic cloudflare-tunnel-token -n cloudflare-tunnel ...
+
+# 3. Watch Flux auto-deploy everything (15 minutes)
+flux get kustomizations --watch
+
+# That's it! Flux deploys:
+# - Traefik, Metrics Server, Cloudflare Tunnel
+# - n8n, cluster-dashboard
+# - All configurations and ingress routes
+```
+
+**Total time**: ~25 minutes for complete cluster with all applications
+
+**See**: [99-disaster-recovery-gitops.md](99-disaster-recovery-gitops.md) for detailed instructions
+
+### Option B: Manual Deployment (Legacy)
+
+If you need to deploy infrastructure manually (not recommended):
 
 1. **Update Git**:
    ```bash
@@ -258,16 +302,17 @@ After successful rebuild:
    git commit -m "docs: Record cluster rebuild"
    ```
 
-2. **Deploy Core Services** (from Iteration 2):
-   - CNI (if not using default Flannel)
-   - Storage (Longhorn/Rook)
-   - Ingress
-   - Cert-manager
-   - Monitoring
+2. **Deploy Core Services** (Manual - see individual guides):
+   - ~~Ingress~~ → Use Flux (see [GITOPS-QUICKSTART.md](GITOPS-QUICKSTART.md))
+   - ~~Metrics Server~~ → Managed by Flux
+   - ~~Cloudflare Tunnel~~ → Managed by Flux
+   - Storage (if needed beyond local-path)
 
-3. **Deploy Applications**:
-   - n8n
-   - Other workloads
+3. **Deploy Applications** (Manual - not recommended):
+   - ~~n8n~~ → Managed by Flux (see [flux/clusters/talos/apps/n8n/](../flux/clusters/talos/apps/n8n/))
+   - ~~cluster-dashboard~~ → Managed by Flux
+
+**Note**: Manual deployment is discouraged. The cluster is designed for GitOps. See [GITOPS-ROADMAP.md](GITOPS-ROADMAP.md) for architecture details.
 
 ## Security Notes
 

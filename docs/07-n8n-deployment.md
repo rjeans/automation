@@ -1,5 +1,20 @@
 # n8n Workflow Automation Deployment
 
+> **⚠️ DEPLOYMENT METHOD CHANGED**
+>
+> **n8n is now managed by Flux GitOps** - This guide is for reference only.
+>
+> **Current deployment method**: See [GITOPS-QUICKSTART.md](GITOPS-QUICKSTART.md)
+>
+> **Configuration location**: `flux/clusters/talos/apps/n8n/`
+>
+> **To modify n8n**:
+> 1. Edit `flux/clusters/talos/apps/n8n/values.yaml`
+> 2. Commit and push to Git
+> 3. Flux automatically applies changes within 1 minute
+>
+> **Manual deployment is no longer recommended**
+
 ## Overview
 
 n8n is a fair-code licensed workflow automation tool that allows you to connect various services and automate tasks. This deployment includes PostgreSQL for persistent storage and is optimized for Raspberry Pi hardware.
@@ -8,6 +23,7 @@ n8n is a fair-code licensed workflow automation tool that allows you to connect 
 **Chart Version**: community-charts/n8n v1.15.12
 **Namespace**: n8n
 **Database**: PostgreSQL (embedded via subchart)
+**Management**: Flux HelmRelease (GitOps)
 
 ## Architecture
 
@@ -45,16 +61,71 @@ n8n is a fair-code licensed workflow automation tool that allows you to connect 
 
 - Kubernetes cluster running (Talos Linux v1.11.2)
 - kubectl configured
-- Helm installed
+- Flux installed and bootstrapped
 - Storage provisioner (Local Path Provisioner) deployed
-- Traefik ingress controller deployed
-- cert-manager deployed (optional, for TLS)
+- Traefik ingress controller deployed (managed by Flux)
+- cert-manager deployed (optional, managed by Flux)
 
-## Installation
+## Current Deployment (GitOps)
+
+### Check n8n Status
+
+```bash
+# Check Flux HelmRelease
+flux get helmrelease n8n -n n8n
+
+# Check pods
+kubectl get pods -n n8n
+
+# Check services
+kubectl get svc -n n8n
+
+# Check persistent volumes
+kubectl get pvc -n n8n
+
+# View current configuration
+cat flux/clusters/talos/apps/n8n/values.yaml
+```
+
+### Modify n8n Configuration
+
+```bash
+# Edit the values file in Git
+vim flux/clusters/talos/apps/n8n/values.yaml
+
+# Commit and push
+git add flux/clusters/talos/apps/n8n/values.yaml
+git commit -m "feat: Update n8n configuration"
+git push
+
+# Flux will automatically apply changes
+# Watch reconciliation
+flux get helmrelease n8n -n n8n --watch
+```
+
+### Verify Deployment
+
+```bash
+# Check all resources
+kubectl get all -n n8n
+
+# Check persistent volumes
+kubectl get pvc -n n8n
+
+# Check ingress routes
+kubectl get ingressroute -n n8n
+
+# Test database connection
+kubectl exec -n n8n n8n-postgresql-0 -- sh -c 'PGPASSWORD=n8n-postgresql-password psql -U n8n -d n8n -c "\dt"'
+```
+
+## Legacy Installation (Not Recommended)
 
 ### Step 1: Add Helm Repository
 
 ```bash
+# ⚠️ This method is deprecated - use Flux instead
+
 # Add community-charts repository
 helm repo add community-charts https://community-charts.github.io/helm-charts
 helm repo update
@@ -66,9 +137,11 @@ helm repo update
 kubectl create namespace n8n
 ```
 
-### Step 3: Deploy n8n
+### Step 3: Deploy n8n Manually (Legacy - Do Not Use)
 
 ```bash
+# ⚠️ This method is deprecated - use Flux instead
+
 # Install n8n with PostgreSQL
 helm install n8n community-charts/n8n \
   --namespace n8n \
@@ -79,28 +152,7 @@ helm install n8n community-charts/n8n \
 kubectl get pods -n n8n -w
 ```
 
-**Expected output:**
-```
-NAME                   READY   STATUS    RESTARTS   AGE
-n8n-5fb75f7fd9-xxxxx   1/1     Running   0          2m
-n8n-postgresql-0       1/1     Running   0          2m
-```
-
-### Step 4: Verify Deployment
-
-```bash
-# Check all resources
-kubectl get all -n n8n
-
-# Check persistent volumes
-kubectl get pvc -n n8n
-
-# Check ingress
-kubectl get ingress -n n8n
-
-# Test database initialization
-kubectl exec -n n8n n8n-postgresql-0 -- sh -c 'PGPASSWORD=n8n-postgresql-password psql -U n8n -d n8n -c "\dt"'
-```
+**Note**: This manual method bypasses GitOps and is not recommended. Changes made manually will be reverted by Flux.
 
 ## Configuration
 
@@ -446,9 +498,35 @@ kubectl rollout restart deployment/n8n -n n8n
 
 ## Upgrading
 
-### Upgrade n8n Version
+### GitOps Method (Recommended)
 
 ```bash
+# Edit HelmRelease to change version
+vim flux/clusters/talos/apps/n8n/helmrelease.yaml
+
+# Change version:
+# spec:
+#   chart:
+#     spec:
+#       version: "1.16.0"  # New version
+
+# Commit and push
+git add flux/clusters/talos/apps/n8n/helmrelease.yaml
+git commit -m "feat: Upgrade n8n to v1.16.0"
+git push
+
+# Flux will automatically upgrade
+flux get helmrelease n8n -n n8n --watch
+
+# Watch rollout
+kubectl rollout status deployment/n8n -n n8n
+```
+
+### Legacy Manual Method (Not Recommended)
+
+```bash
+# ⚠️ This method is deprecated - use Flux instead
+
 # Check current version
 helm list -n n8n
 
@@ -477,11 +555,14 @@ kubectl rollout status deployment/n8n -n n8n
 kubectl exec -n n8n n8n-postgresql-0 -- sh -c \
   'PGPASSWORD=n8n-postgresql-password pg_dump -U n8n -d n8n' > backup.sql
 
-# Update image in values.yaml
-# Then upgrade
-helm upgrade n8n community-charts/n8n \
-  --namespace n8n \
-  --values kubernetes/apps/n8n/values.yaml
+# Edit values in Git
+vim flux/clusters/talos/apps/n8n/values.yaml
+# Update postgresql.image.tag
+
+# Commit and push - Flux will upgrade automatically
+git add flux/clusters/talos/apps/n8n/values.yaml
+git commit -m "feat: Upgrade PostgreSQL version"
+git push
 ```
 
 ## Uninstalling

@@ -1,5 +1,20 @@
 # Ingress Setup with Traefik
 
+> **⚠️ DEPLOYMENT METHOD CHANGED**
+>
+> **Traefik is now managed by Flux GitOps** - This guide is for reference only.
+>
+> **Current deployment method**: See [GITOPS-QUICKSTART.md](GITOPS-QUICKSTART.md)
+>
+> **Configuration location**: `flux/clusters/talos/infrastructure/traefik/`
+>
+> **To modify Traefik**:
+> 1. Edit `flux/clusters/talos/infrastructure/traefik/values-configmap.yaml`
+> 2. Commit and push to Git
+> 3. Flux automatically applies changes within 1 minute
+>
+> **Manual deployment is no longer recommended**
+
 ## Overview
 
 Traefik is a modern HTTP reverse proxy and load balancer. This setup uses NodePort for external access, suitable for home lab environments.
@@ -10,8 +25,43 @@ Traefik is a modern HTTP reverse proxy and load balancer. This setup uses NodePo
 - **Service Type**: NodePort (ports 30080/30443)
 - **Access**: `http://<any-node-ip>:30080` or `https://<any-node-ip>:30443`
 - **Dashboard**: Available via IngressRoute at `traefik.local`
+- **Management**: Flux HelmRelease (GitOps)
 
-## Installation
+## Current Deployment (GitOps)
+
+### Check Traefik Status
+
+```bash
+# Check Flux HelmRelease
+flux get helmrelease traefik -n traefik
+
+# Check pods
+kubectl get pods -n traefik
+
+# Check service
+kubectl get svc -n traefik
+
+# View configuration
+kubectl get configmap -n traefik traefik-values -o yaml
+```
+
+### Modify Traefik Configuration
+
+```bash
+# Edit the values ConfigMap in Git
+vim flux/clusters/talos/infrastructure/traefik/values-configmap.yaml
+
+# Commit and push
+git add flux/clusters/talos/infrastructure/traefik/values-configmap.yaml
+git commit -m "feat: Update Traefik configuration"
+git push
+
+# Flux will automatically apply changes
+# Watch reconciliation
+flux logs --follow --level=info
+```
+
+## Legacy Installation (Not Recommended)
 
 ### Prerequisites
 
@@ -19,9 +69,11 @@ Traefik is a modern HTTP reverse proxy and load balancer. This setup uses NodePo
 - Kubernetes cluster running
 - kubectl configured
 
-### Deploy Traefik
+### Deploy Traefik Manually (Legacy - Do Not Use)
 
 ```bash
+# ⚠️ This method is deprecated - use Flux instead
+
 # Add Traefik Helm repository
 helm repo add traefik https://traefik.github.io/charts
 helm repo update
@@ -35,6 +87,8 @@ helm install traefik traefik/traefik \
   --values kubernetes/core/traefik/values.yaml \
   --version 33.2.1
 ```
+
+**Note**: This manual method bypasses GitOps and is not recommended. Changes made manually will be reverted by Flux.
 
 ### Verify Installation
 
@@ -157,7 +211,32 @@ echo "192.168.1.11 traefik.local" | sudo tee -a /etc/hosts
 
 ## Upgrading Traefik
 
+### GitOps Method (Recommended)
+
 ```bash
+# Edit HelmRelease to change version
+vim flux/clusters/talos/infrastructure/traefik/helmrelease.yaml
+
+# Change version:
+# spec:
+#   chart:
+#     spec:
+#       version: "33.3.0"  # New version
+
+# Commit and push
+git add flux/clusters/talos/infrastructure/traefik/helmrelease.yaml
+git commit -m "feat: Upgrade Traefik to v33.3.0"
+git push
+
+# Flux will automatically upgrade
+flux get helmrelease traefik -n traefik --watch
+```
+
+### Legacy Manual Method (Not Recommended)
+
+```bash
+# ⚠️ This method is deprecated - use Flux instead
+
 # Update values if needed
 vim kubernetes/core/traefik/values.yaml
 
