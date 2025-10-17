@@ -1,0 +1,60 @@
+# Cloudflare Tunnel (cloudflared) Deployment
+# Routes traffic from Cloudflare edge to Traefik ingress controller
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: cloudflare-tunnel
+  labels:
+    app: cloudflared
+spec:
+  replicas: 2  # High availability
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      containers:
+      - name: cloudflared
+        image: cloudflare/cloudflared:2024.10.0
+        args:
+        - tunnel
+        - --no-autoupdate
+        - run
+        - --token
+        - $(TUNNEL_TOKEN)
+        env:
+        - name: TUNNEL_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: cloudflare-tunnel-token
+              key: token
+        # Note: Health is determined by tunnel connection status
+        # Probes removed as metrics server listens on localhost only
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+
+      # Tolerate control plane nodes
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+
+      # Spread across nodes for HA
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: cloudflared
+              topologyKey: kubernetes.io/hostname
