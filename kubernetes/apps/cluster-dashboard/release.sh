@@ -53,19 +53,22 @@ fi
 # Update VERSION file
 echo "$NEW_VERSION" > "$VERSION_FILE"
 
+# Determine repo root (3 levels up from kubernetes/apps/cluster-dashboard)
+REPO_ROOT="$SCRIPT_DIR/../../.."
+
 # Update Chart.yaml
-sed -i.bak "s/^version: .*/version: $NEW_VERSION/" "$SCRIPT_DIR/../../charts/cluster-dashboard/Chart.yaml"
-sed -i.bak "s/^appVersion: .*/appVersion: \"$NEW_VERSION\"/" "$SCRIPT_DIR/../../charts/cluster-dashboard/Chart.yaml"
-rm "$SCRIPT_DIR/../../charts/cluster-dashboard/Chart.yaml.bak"
+sed -i.bak "s/^version: .*/version: $NEW_VERSION/" "$REPO_ROOT/charts/cluster-dashboard/Chart.yaml"
+sed -i.bak "s/^appVersion: .*/appVersion: \"$NEW_VERSION\"/" "$REPO_ROOT/charts/cluster-dashboard/Chart.yaml"
+rm "$REPO_ROOT/charts/cluster-dashboard/Chart.yaml.bak"
 
 # Update values.yaml
-sed -i.bak "s/tag: \"v[^\"]*\"/tag: \"v$NEW_VERSION\"/" "$SCRIPT_DIR/../../charts/cluster-dashboard/values.yaml"
-rm "$SCRIPT_DIR/../../charts/cluster-dashboard/values.yaml.bak"
+sed -i.bak "s/tag: \"v[^\"]*\"/tag: \"v$NEW_VERSION\"/" "$REPO_ROOT/charts/cluster-dashboard/values.yaml"
+rm "$REPO_ROOT/charts/cluster-dashboard/values.yaml.bak"
 
 # Update HelmRelease
-sed -i.bak "s/version: \"[^\"]*\"/version: \"$NEW_VERSION\"/" "$SCRIPT_DIR/../../flux/clusters/talos/apps/cluster-dashboard/helmrelease.yaml"
-sed -i.bak "s/tag: \"v[^\"]*\"/tag: \"v$NEW_VERSION\"/" "$SCRIPT_DIR/../../flux/clusters/talos/apps/cluster-dashboard/helmrelease.yaml"
-rm "$SCRIPT_DIR/../../flux/clusters/talos/apps/cluster-dashboard/helmrelease.yaml.bak"
+sed -i.bak "s/version: \"[^\"]*\"/version: \"$NEW_VERSION\"/" "$REPO_ROOT/flux/clusters/talos/apps/cluster-dashboard/helmrelease.yaml"
+sed -i.bak "s/tag: \"v[^\"]*\"/tag: \"v$NEW_VERSION\"/" "$REPO_ROOT/flux/clusters/talos/apps/cluster-dashboard/helmrelease.yaml"
+rm "$REPO_ROOT/flux/clusters/talos/apps/cluster-dashboard/helmrelease.yaml.bak"
 
 echo ""
 echo "✅ Updated files:"
