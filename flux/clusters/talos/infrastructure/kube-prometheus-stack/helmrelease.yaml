@@ -67,8 +67,7 @@ spec:
           cpu: 500m
           memory: 512Mi
       persistence:
-        enabled: true
-        size: 5Gi
+        enabled: false  # Disabled due to Talos subPath permission issues
       # Grafana ingress
       ingress:
         enabled: true
