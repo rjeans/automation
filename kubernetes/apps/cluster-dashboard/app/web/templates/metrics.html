@@ -395,7 +395,9 @@
                 <th>Helm Release</th>
                 <th>Namespace</th>
                 <th>Status</th>
+                <th>App Version</th>
                 <th>Chart Version</th>
+                <th>Age</th>
             </tr>
         </thead>
         <tbody>
@@ -408,34 +410,12 @@
                     {{.Status}}
                 </td>
                 <td>{{.Revision}}</td>
+                <td>{{.ChartVersion}}</td>
+                <td style="color: var(--text-muted); font-size: 0.85em;">{{.Age}}</td>
             </tr>
             {{end}}
         </tbody>
     </table>
-    {{end}}
-
-    {{if .Flux.RecentActivity}}
-    <div style="margin-top: 20px;">
-        <div style="font-weight: bold; margin-bottom: 8px; font-size: 0.9em;">Recent Activity</div>
-        <table class="node-table">
-            <thead>
-                <tr>
-                    <th style="width: 80px;">Time</th>
-                    <th style="width: 120px;">Resource</th>
-                    <th>Event</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{range .Flux.RecentActivity}}
-                <tr>
-                    <td style="color: var(--text-muted); font-size: 0.85em; white-space: nowrap; vertical-align: top;">{{.Time}}</td>
-                    <td style="vertical-align: top;">{{.Resource}}</td>
-                    <td style="font-size: 0.85em; word-wrap: break-word; max-width: 500px; vertical-align: top;">{{.Message}}</td>
-                </tr>
-                {{end}}
-            </tbody>
-        </table>
-    </div>
     {{end}}
 </div>
 

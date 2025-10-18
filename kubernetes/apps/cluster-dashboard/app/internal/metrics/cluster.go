@@ -84,11 +84,13 @@ type FluxStatus struct {
 
 // FluxResource represents a Flux resource (Kustomization or HelmRelease)
 type FluxResource struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-	Ready     bool   `json:"ready"`
-	Status    string `json:"status"`
-	Revision  string `json:"revision"`
+	Name         string `json:"name"`
+	Namespace    string `json:"namespace"`
+	Ready        bool   `json:"ready"`
+	Status       string `json:"status"`
+	Revision     string `json:"revision"`
+	ChartVersion string `json:"chart_version,omitempty"` // For HelmReleases
+	Age          string `json:"age,omitempty"`           // Human-readable age
 }
 
 // FluxEvent represents a recent Flux activity event

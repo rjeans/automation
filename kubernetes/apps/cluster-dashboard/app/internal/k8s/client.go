@@ -8,6 +8,9 @@ import (
 	"github.com/automation/cluster-dashboard/internal/metrics"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -18,6 +21,7 @@ import (
 type Client struct {
 	clientset        *kubernetes.Clientset
 	metricsClientset *metricsv.Clientset
+	dynamicClient    dynamic.Interface
 }
 
 // NewClient creates a new Kubernetes client using in-cluster config or local kubeconfig
@@ -47,9 +51,16 @@ func NewClient() (*Client, error) {
 	// Metrics client may not be available if metrics-server isn't deployed
 	metricsClientset, _ := metricsv.NewForConfig(config)
 
+	// Create dynamic client for querying CRDs
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dynamic client: %w", err)
+	}
+
 	return &Client{
 		clientset:        clientset,
 		metricsClientset: metricsClientset,
+		dynamicClient:    dynamicClient,
 	}, nil
 }
 
@@ -404,45 +415,63 @@ func (c *Client) GetFluxStatus(ctx context.Context) (*metrics.FluxStatus, error)
 		},
 	}
 
-	// Check HelmReleases by looking at deployments
+	// Query HelmReleases dynamically from Flux CRDs
 	helmReleases := []metrics.FluxResource{}
 
-	// Check Traefik
-	if deps, err := c.clientset.AppsV1().Deployments("traefik").List(ctx, metav1.ListOptions{}); err == nil && len(deps.Items) > 0 {
-		ready := deps.Items[0].Status.ReadyReplicas == deps.Items[0].Status.Replicas && deps.Items[0].Status.Replicas > 0
-		helmReleases = append(helmReleases, metrics.FluxResource{
-			Name:      "traefik",
-			Namespace: "traefik",
-			Ready:     ready,
-			Status:    "Deployed",
-			Revision:  "v33.2.1",
-		})
-	}
+	// Use dynamic client to query HelmRelease CRDs across all namespaces
+	helmReleaseList, err := c.dynamicClient.Resource(schema.GroupVersionResource{
+		Group:    "helm.toolkit.fluxcd.io",
+		Version:  "v2",
+		Resource: "helmreleases",
+	}).List(ctx, metav1.ListOptions{})
 
-	// Check n8n
-	if deps, err := c.clientset.AppsV1().Deployments("n8n").List(ctx, metav1.ListOptions{}); err == nil && len(deps.Items) > 0 {
-		ready := deps.Items[0].Status.ReadyReplicas == deps.Items[0].Status.Replicas && deps.Items[0].Status.Replicas > 0
-		helmReleases = append(helmReleases, metrics.FluxResource{
-			Name:      "n8n",
-			Namespace: "n8n",
-			Ready:     ready,
-			Status:    "Deployed",
-			Revision:  "v1.15.12",
-		})
-	}
+	if err == nil && helmReleaseList != nil {
+		for _, item := range helmReleaseList.Items {
+			name := item.GetName()
+			namespace := item.GetNamespace()
 
-	// Check Metrics Server
-	if deps, err := c.clientset.AppsV1().Deployments("kube-system").List(ctx, metav1.ListOptions{
-		LabelSelector: "app.kubernetes.io/name=metrics-server",
-	}); err == nil && len(deps.Items) > 0 {
-		ready := deps.Items[0].Status.ReadyReplicas == deps.Items[0].Status.Replicas && deps.Items[0].Status.Replicas > 0
-		helmReleases = append(helmReleases, metrics.FluxResource{
-			Name:      "metrics-server",
-			Namespace: "kube-system",
-			Ready:     ready,
-			Status:    "Deployed",
-			Revision:  "v3.13.0",
-		})
+			// Get status
+			status, _, _ := unstructured.NestedMap(item.Object, "status")
+			conditions, _, _ := unstructured.NestedSlice(status, "conditions")
+
+			ready := false
+			statusStr := "Unknown"
+			for _, cond := range conditions {
+				condMap := cond.(map[string]interface{})
+				if condMap["type"] == "Ready" {
+					ready = condMap["status"] == "True"
+					if ready {
+						statusStr = "Deployed"
+					} else {
+						statusStr = "Failed"
+					}
+					break
+				}
+			}
+
+			// Get chart version from spec
+			spec, _, _ := unstructured.NestedMap(item.Object, "spec")
+			chart, _, _ := unstructured.NestedMap(spec, "chart")
+			chartSpec, _, _ := unstructured.NestedMap(chart, "spec")
+			chartVersion, _, _ := unstructured.NestedString(chartSpec, "version")
+
+			// Get app version from status (last attempted revision)
+			revision, _, _ := unstructured.NestedString(status, "lastAttemptedRevision")
+
+			// Calculate age
+			creationTime := item.GetCreationTimestamp()
+			age := formatTimeAgo(time.Since(creationTime.Time))
+
+			helmReleases = append(helmReleases, metrics.FluxResource{
+				Name:         name,
+				Namespace:    namespace,
+				Ready:        ready,
+				Status:       statusStr,
+				Revision:     revision,
+				ChartVersion: chartVersion,
+				Age:          age,
+			})
+		}
 	}
 
 	// Check overall health
@@ -454,47 +483,12 @@ func (c *Client) GetFluxStatus(ctx context.Context) (*metrics.FluxStatus, error)
 		}
 	}
 
-	// Get recent Flux events
-	recentActivity := []metrics.FluxEvent{}
-	events, err := c.clientset.CoreV1().Events(fluxNamespace).List(ctx, metav1.ListOptions{
-		FieldSelector: "involvedObject.kind=Kustomization",
-		Limit:         5,
-	})
-	if err == nil {
-		for i := len(events.Items) - 1; i >= 0 && len(recentActivity) < 5; i-- {
-			event := events.Items[i]
-			// Only show reconciliation events
-			if event.Reason == "ReconciliationSucceeded" || event.Reason == "Progressing" {
-				timeAgo := time.Since(event.LastTimestamp.Time)
-				timeStr := formatTimeAgo(timeAgo)
-
-				recentActivity = append(recentActivity, metrics.FluxEvent{
-					Time:     timeStr,
-					Type:     event.Reason,
-					Resource: event.InvolvedObject.Name,
-					Message:  event.Message,
-				})
-			}
-		}
-	}
-
-	// If no events, add a placeholder
-	if len(recentActivity) == 0 {
-		recentActivity = append(recentActivity, metrics.FluxEvent{
-			Time:     "< 1m ago",
-			Type:     "ReconciliationSucceeded",
-			Resource: "flux-system",
-			Message:  "System reconciled successfully",
-		})
-	}
-
 	return &metrics.FluxStatus{
 		Version:        fluxVersion,
 		GitRepository:  "rjeans/automation",
 		LastSync:       "< 1 min ago",
 		Kustomizations: kustomizations,
 		HelmReleases:   helmReleases,
-		RecentActivity: recentActivity,
 		Healthy:        healthy,
 	}, nil
 }
