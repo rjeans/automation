@@ -332,36 +332,111 @@
     {{end}}
 </div>
 
-<!-- Applications Section -->
+<!-- Flux GitOps Section -->
 <div class="section">
     <div class="section-header">
-        <span class="section-icon">🚀</span>
-        <h2 class="section-title">Applications</h2>
+        <span class="section-icon">⚡</span>
+        <h2 class="section-title">Flux GitOps</h2>
     </div>
 
-    <table class="node-table">
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Version</div>
+            <div class="info-value">{{.Flux.Version}}</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Status</div>
+            <div class="info-value">
+                <span class="status-indicator {{if .Flux.Healthy}}status-healthy{{else}}status-error{{end}}"></span>
+                {{if .Flux.Healthy}}Reconciling{{else}}Degraded{{end}}
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Git Repository</div>
+            <div class="info-value">{{.Flux.GitRepository}}</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Last Sync</div>
+            <div class="info-value">{{.Flux.LastSync}}</div>
+        </div>
+    </div>
+
+    {{if .Flux.Kustomizations}}
+    <table class="node-table" style="margin-top: 16px;">
         <thead>
             <tr>
-                <th>Application</th>
-                <th>Namespace</th>
+                <th>Kustomization</th>
                 <th>Status</th>
-                <th>Replicas</th>
+                <th>Revision</th>
             </tr>
         </thead>
         <tbody>
-            {{range .Applications}}
+            {{range .Flux.Kustomizations}}
             <tr>
                 <td>{{.Name}}</td>
-                <td>{{.Namespace}}</td>
                 <td>
-                    <span class="status-indicator {{if .Healthy}}status-healthy{{else}}status-error{{end}}"></span>
+                    <span class="status-indicator {{if .Ready}}status-healthy{{else}}status-error{{end}}"></span>
                     {{.Status}}
                 </td>
-                <td>{{.ReadyReplicas}}/{{.DesiredReplicas}}</td>
+                <td>{{.Revision}}</td>
             </tr>
             {{end}}
         </tbody>
     </table>
+    {{end}}
+
+    {{if .Flux.HelmReleases}}
+    <table class="node-table" style="margin-top: 16px;">
+        <thead>
+            <tr>
+                <th>Helm Release</th>
+                <th>Namespace</th>
+                <th>Status</th>
+                <th>Chart Version</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Flux.HelmReleases}}
+            <tr>
+                <td>{{.Name}}</td>
+                <td>{{.Namespace}}</td>
+                <td>
+                    <span class="status-indicator {{if .Ready}}status-healthy{{else}}status-error{{end}}"></span>
+                    {{.Status}}
+                </td>
+                <td>{{.Revision}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{end}}
+
+    {{if .Flux.RecentActivity}}
+    <div style="margin-top: 20px;">
+        <div style="font-weight: bold; margin-bottom: 8px; font-size: 0.9em;">Recent Activity</div>
+        <table class="node-table">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">Time</th>
+                    <th style="width: 120px;">Resource</th>
+                    <th>Event</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Flux.RecentActivity}}
+                <tr>
+                    <td style="color: var(--text-muted); font-size: 0.85em; white-space: nowrap; vertical-align: top;">{{.Time}}</td>
+                    <td style="vertical-align: top;">{{.Resource}}</td>
+                    <td style="font-size: 0.85em; word-wrap: break-word; max-width: 500px; vertical-align: top;">{{.Message}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{end}}
 </div>
 
 <div class="timestamp">

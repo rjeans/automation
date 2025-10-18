@@ -1,0 +1,83 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "cluster-dashboard.fullname" . }}-viewer
+  labels:
+    {{- include "cluster-dashboard.labels" . | nindent 4 }}
+rules:
+  # Read nodes and their metrics
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/status
+    verbs:
+      - get
+      - list
+      - watch
+
+  # Read pods across all namespaces
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/status
+    verbs:
+      - get
+      - list
+      - watch
+
+  # Read deployments and daemonsets for application status
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - daemonsets
+      - replicasets
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - watch
+
+  # Read events for cluster activity
+  - apiGroups: [""]
+    resources:
+      - events
+    verbs:
+      - get
+      - list
+      - watch
+
+  # Read services and endpoints
+  - apiGroups: [""]
+    resources:
+      - services
+      - endpoints
+    verbs:
+      - get
+      - list
+      - watch
+
+  # Read namespaces
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+
+  # Read node metrics (if metrics-server is deployed)
+  - apiGroups: ["metrics.k8s.io"]
+    resources:
+      - nodes
+      - pods
+    verbs:
+      - get
+      - list
+
+  # Read component status
+  - apiGroups: [""]
+    resources:
+      - componentstatuses
+    verbs:
+      - get
+      - list

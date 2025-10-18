@@ -3,8 +3,6 @@ kind: Kustomization
 namespace: cluster-dashboard
 resources:
   - namespace.yaml
-  - rbac.yaml
-  - deployment.yaml
-  - service.yaml
+  - helmrelease.yaml
   - ingress-external.yaml
   - network-policy.yaml

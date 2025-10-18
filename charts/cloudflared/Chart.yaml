@@ -1,0 +1,13 @@
+apiVersion: v2
+name: cloudflared
+description: Cloudflare Tunnel (cloudflared) for secure ingress
+type: application
+version: 1.0.0
+appVersion: "2024.10.0"
+keywords:
+  - cloudflare
+  - tunnel
+  - ingress
+maintainers:
+  - name: Rich Jeans
+    email: rich@jeansy.org

@@ -19,8 +19,9 @@ worker.yaml
 .terraform.lock.hcl
 
 # Helm
-charts/
 *.tgz
+Chart.lock
+charts/**/charts/
 
 # OS files
 .DS_Store

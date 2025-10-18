@@ -1,0 +1,51 @@
+# Cluster Dashboard - Managed by Flux
+# This HelmRelease tells Flux to install and manage the cluster dashboard
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cluster-dashboard
+  namespace: cluster-dashboard
+spec:
+  interval: 10m
+  timeout: 5m
+  chart:
+    spec:
+      chart: ./charts/cluster-dashboard
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      interval: 1m
+  install:
+    createNamespace: false
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+    cleanupOnFail: true
+  # Values inline
+  values:
+    replicaCount: 2
+    image:
+      repository: ghcr.io/rjeans/cluster-dashboard
+      tag: "latest"
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 80
+      targetPort: 8080
+    env:
+      PORT: "8080"
+      TZ: "UTC"
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+    serviceAccount:
+      create: true
+      name: cluster-dashboard

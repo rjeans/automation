@@ -1,0 +1,42 @@
+# Default values for cloudflared
+replicaCount: 2
+
+image:
+  repository: cloudflare/cloudflared
+  tag: "2024.10.0"
+  pullPolicy: IfNotPresent
+
+# Cloudflare Tunnel token (required)
+# Create secret manually: kubectl create secret generic cloudflare-tunnel-token --from-literal=token=<your-token> -n cloudflare-tunnel
+tunnel:
+  secretName: cloudflare-tunnel-token
+  secretKey: token
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# High availability settings
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: cloudflared
+        topologyKey: kubernetes.io/hostname
+
+# Allow scheduling on control plane nodes
+tolerations:
+- key: node-role.kubernetes.io/control-plane
+  operator: Exists
+  effect: NoSchedule
+
+# Labels
+labels:
+  dashboard.monitor: "true"

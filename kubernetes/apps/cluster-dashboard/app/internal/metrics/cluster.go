@@ -8,11 +8,12 @@ import (
 
 // ClusterMetrics holds all cluster health information
 type ClusterMetrics struct {
-	Hardware    HardwareStatus    `json:"hardware"`
-	Talos       TalosStatus       `json:"talos"`
-	Kubernetes  KubernetesStatus  `json:"kubernetes"`
-	Applications []AppStatus      `json:"applications"`
-	UpdatedAt   time.Time         `json:"updated_at"`
+	Hardware     HardwareStatus    `json:"hardware"`
+	Talos        TalosStatus       `json:"talos"`
+	Kubernetes   KubernetesStatus  `json:"kubernetes"`
+	Flux         FluxStatus        `json:"flux"`
+	Applications []AppStatus       `json:"applications"`
+	UpdatedAt    time.Time         `json:"updated_at"`
 }
 
 // HardwareStatus represents physical hardware information
@@ -70,6 +71,34 @@ type AppStatus struct {
 	Healthy         bool   `json:"healthy"`
 }
 
+// FluxStatus represents Flux GitOps status
+type FluxStatus struct {
+	Version         string           `json:"version"`
+	GitRepository   string           `json:"git_repository"`
+	LastSync        string           `json:"last_sync"`
+	Kustomizations  []FluxResource   `json:"kustomizations"`
+	HelmReleases    []FluxResource   `json:"helm_releases"`
+	RecentActivity  []FluxEvent      `json:"recent_activity"`
+	Healthy         bool             `json:"healthy"`
+}
+
+// FluxResource represents a Flux resource (Kustomization or HelmRelease)
+type FluxResource struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	Ready     bool   `json:"ready"`
+	Status    string `json:"status"`
+	Revision  string `json:"revision"`
+}
+
+// FluxEvent represents a recent Flux activity event
+type FluxEvent struct {
+	Time     string `json:"time"`
+	Type     string `json:"type"`
+	Resource string `json:"resource"`
+	Message  string `json:"message"`
+}
+
 // Collector interface for gathering metrics
 type Collector interface {
 	Collect(ctx context.Context) (*ClusterMetrics, error)
@@ -89,6 +118,7 @@ type K8sClient interface {
 	GetNodeMetrics(ctx context.Context) ([]NodeDetail, error)
 	GetKubernetesStatus(ctx context.Context) (*KubernetesStatus, error)
 	GetApplicationStatus(ctx context.Context) ([]AppStatus, error)
+	GetFluxStatus(ctx context.Context) (*FluxStatus, error)
 }
 
 // TalosClient interface for Talos operations
@@ -146,6 +176,22 @@ func (mc *MetricsCollector) Collect(ctx context.Context) (*ClusterMetrics, error
 		return nil, fmt.Errorf("failed to get app status: %w", err)
 	}
 	metrics.Applications = apps
+
+	// Collect Flux status
+	fluxStatus, err := mc.k8sClient.GetFluxStatus(ctx)
+	if err != nil {
+		// Flux might not be installed, don't fail completely
+		metrics.Flux = FluxStatus{
+			Version:        "Not Installed",
+			GitRepository:  "N/A",
+			LastSync:       "N/A",
+			Kustomizations: []FluxResource{},
+			HelmReleases:   []FluxResource{},
+			Healthy:        false,
+		}
+	} else {
+		metrics.Flux = *fluxStatus
+	}
 
 	// Build hardware status
 	controlPlanes := 0
