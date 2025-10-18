@@ -30,7 +30,7 @@ spec:
     replicaCount: 2
     image:
       repository: ghcr.io/rjeans/cluster-dashboard
-      tag: "latest"
+      tag: "v1.0.1"
       pullPolicy: IfNotPresent
     service:
       type: ClusterIP
