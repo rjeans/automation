@@ -76,7 +76,7 @@ spec:
         hosts:
           - grafana.jeansy.org
         annotations:
-          traefik.ingress.kubernetes.io/router.entrypoints: web
+          traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
       # Pre-configured dashboards
       defaultDashboardsEnabled: true
       defaultDashboardsTimezone: UTC
