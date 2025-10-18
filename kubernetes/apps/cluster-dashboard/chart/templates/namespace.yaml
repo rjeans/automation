@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: cluster-dashboard
-  labels:
-    name: cluster-dashboard
-    app.kubernetes.io/name: cluster-dashboard
