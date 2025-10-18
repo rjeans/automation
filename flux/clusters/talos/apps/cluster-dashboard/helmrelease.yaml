@@ -11,6 +11,7 @@ spec:
   chart:
     spec:
       chart: ./charts/cluster-dashboard
+      version: "1.0.4"
       sourceRef:
         kind: GitRepository
         name: flux-system
