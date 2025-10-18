@@ -15,5 +15,5 @@ spec:
     kind: GitRepository
     name: flux-system
   path: ./flux/clusters/talos/apps
-  prune: true
-  wait: true
+  prune: false  # Disabled to prevent conflicts with Helm-managed resources
+  wait: false
