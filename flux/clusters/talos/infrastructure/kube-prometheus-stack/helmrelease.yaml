@@ -52,17 +52,17 @@ spec:
         podMonitorSelectorNilUsesHelmValues: false
         ruleSelectorNilUsesHelmValues: false
         # Fix for Talos/local-path-provisioner permissions
+        # Run as root to avoid fsGroup issues with local-path-provisioner
         securityContext:
-          fsGroup: 2000
-          runAsGroup: 2000
-          runAsNonRoot: true
-          runAsUser: 1000
-          fsGroupChangePolicy: "OnRootMismatch"
+          fsGroup: 0
+          runAsGroup: 0
+          runAsNonRoot: false
+          runAsUser: 0
         containers:
           - name: prometheus
             securityContext:
               allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: false  # Required for query log
+              readOnlyRootFilesystem: false
               capabilities:
                 drop:
                 - ALL
