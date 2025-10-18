@@ -30,7 +30,7 @@ spec:
     replicaCount: 2
     image:
       repository: cloudflare/cloudflared
-      tag: "2024.10.0"
+      tag: "2025.10.0"
       pullPolicy: IfNotPresent
     tunnel:
       secretName: cloudflare-tunnel-token
