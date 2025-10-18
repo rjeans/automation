@@ -2,8 +2,8 @@ apiVersion: v2
 name: cloudflared
 description: Cloudflare Tunnel (cloudflared) for secure ingress
 type: application
-version: 1.0.0
-appVersion: "2024.10.0"
+version: 1.1.0
+appVersion: "2025.10.0"
 keywords:
   - cloudflare
   - tunnel
