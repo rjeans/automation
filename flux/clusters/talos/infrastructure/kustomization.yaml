@@ -4,3 +4,4 @@ resources:
   - traefik
   - metrics-server
   - cloudflare-tunnel
+  - kube-prometheus-stack
