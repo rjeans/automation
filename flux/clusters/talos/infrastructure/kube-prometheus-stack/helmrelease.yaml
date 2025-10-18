@@ -39,23 +39,16 @@ spec:
         # Retention period
         retention: 15d
         retentionSize: "10GB"
-        # Storage configuration
-        storageSpec:
-          volumeClaimTemplate:
-            spec:
-              accessModes: ["ReadWriteOnce"]
-              resources:
-                requests:
-                  storage: 20Gi
         # Enable service monitors
         serviceMonitorSelectorNilUsesHelmValues: false
         podMonitorSelectorNilUsesHelmValues: false
         ruleSelectorNilUsesHelmValues: false
-        # Fix query log permission issue with subPath mount on Talos
-        # subPath prevents fsGroup from working, so write query log to /tmp
-        additionalArgs:
-          - name: query.log-file
-            value: /tmp/queries.active
+        # Use emptyDir for /prometheus to avoid subPath permission issues
+        # The PVC uses subPath which prevents fsGroup from working on Talos
+        volumes:
+          - name: prometheus-db
+            emptyDir:
+              sizeLimit: 25Gi
         securityContext:
           fsGroup: 2000
           runAsGroup: 2000
