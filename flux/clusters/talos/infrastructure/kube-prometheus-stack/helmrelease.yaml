@@ -67,7 +67,16 @@ spec:
           cpu: 500m
           memory: 512Mi
       persistence:
-        enabled: false  # Disabled due to Talos subPath permission issues
+        enabled: true
+        size: 5Gi
+      # Disable init container that tries to chown (doesn't work with Talos)
+      initChownData:
+        enabled: false
+      # Set security context for proper volume permissions
+      podSecurityContext:
+        fsGroup: 472
+        runAsUser: 472
+        runAsGroup: 472
       # Grafana ingress
       ingress:
         enabled: true
