@@ -41,6 +41,8 @@ spec:
         retentionSize: "10GB"
         # Storage configuration with PVC
         storageSpec:
+          # Disable subPath to avoid permission issues on Talos Linux
+          disableMountSubPath: true
           volumeClaimTemplate:
             spec:
               accessModes: ["ReadWriteOnce"]
@@ -51,9 +53,8 @@ spec:
         serviceMonitorSelectorNilUsesHelmValues: false
         podMonitorSelectorNilUsesHelmValues: false
         ruleSelectorNilUsesHelmValues: false
-        # Add initContainer to fix permissions on PVC subdirectory
-        # Note: Prometheus Operator mounts the PVC with subPath: "prometheus-db"
-        # So we need to set permissions on that specific subdirectory
+        # Add initContainer to fix permissions on PVC
+        # With disableMountSubPath: true, the entire PVC is mounted at /prometheus
         initContainers:
           - name: fix-permissions
             image: busybox:latest
@@ -61,11 +62,9 @@ spec:
               - sh
               - -c
               - |
-                # Create the subdirectory that will be mounted as subPath
-                mkdir -p /prometheus/prometheus-db
-                # Set ownership on the subdirectory (this is what gets mounted to /prometheus in the main container)
-                chown -R 1000:2000 /prometheus/prometheus-db
-                chmod -R 755 /prometheus/prometheus-db
+                # Set ownership on the entire volume
+                chown -R 1000:2000 /prometheus
+                chmod -R 755 /prometheus
             volumeMounts:
               - name: prometheus-kube-prometheus-stack-prometheus-db
                 mountPath: /prometheus
