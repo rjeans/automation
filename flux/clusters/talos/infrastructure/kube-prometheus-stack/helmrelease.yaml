@@ -105,14 +105,9 @@ spec:
         server:
           root_url: "%(protocol)s://%(domain)s/grafana/"
           serve_from_sub_path: true
-      # Grafana ingress
+      # Grafana ingress - disabled, using external ingress instead
       ingress:
-        enabled: true
-        ingressClassName: traefik
-        hosts:
-          - grafana.jeansy.org
-        annotations:
-          traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+        enabled: false
       # Pre-configured dashboards
       defaultDashboardsEnabled: true
       defaultDashboardsTimezone: UTC
