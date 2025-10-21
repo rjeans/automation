@@ -51,7 +51,9 @@ spec:
         serviceMonitorSelectorNilUsesHelmValues: false
         podMonitorSelectorNilUsesHelmValues: false
         ruleSelectorNilUsesHelmValues: false
-        # Add initContainer to fix permissions on PVC
+        # Add initContainer to fix permissions on PVC subdirectory
+        # Note: Prometheus Operator mounts the PVC with subPath: "prometheus-db"
+        # So we need to set permissions on that specific subdirectory
         initContainers:
           - name: fix-permissions
             image: busybox:latest
@@ -59,21 +61,23 @@ spec:
               - sh
               - -c
               - |
-                chown -R 1000:2000 /prometheus
-                chmod -R 755 /prometheus
+                # Create the subdirectory that will be mounted as subPath
+                mkdir -p /prometheus/prometheus-db
+                # Set ownership on the subdirectory (this is what gets mounted to /prometheus in the main container)
+                chown -R 1000:2000 /prometheus/prometheus-db
+                chmod -R 755 /prometheus/prometheus-db
             volumeMounts:
               - name: prometheus-kube-prometheus-stack-prometheus-db
                 mountPath: /prometheus
             securityContext:
               runAsUser: 0
               runAsNonRoot: false
-        # Use fsGroup for proper permission handling
+        # Security context for Prometheus container
         securityContext:
           fsGroup: 2000
           runAsGroup: 2000
           runAsNonRoot: true
           runAsUser: 1000
-          fsGroupChangePolicy: "OnRootMismatch"
 
     # Grafana configuration
     grafana:
