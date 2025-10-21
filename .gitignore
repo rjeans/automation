@@ -1,4 +1,3 @@
-
 # Secrets (all - encrypted and unencrypted)
 *.key
 *.pem
