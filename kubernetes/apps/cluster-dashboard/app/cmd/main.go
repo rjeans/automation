@@ -62,9 +62,9 @@ func main() {
 	server := &http.Server{
 		Addr:         ":" + port,
 		Handler:      mux,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		ReadTimeout:  30 * time.Second,  // Increased from 15s for slow clusters
+		WriteTimeout: 60 * time.Second,  // Increased from 15s to allow metrics rendering
+		IdleTimeout:  120 * time.Second, // Increased from 60s
 	}
 
 	// Start server in a goroutine

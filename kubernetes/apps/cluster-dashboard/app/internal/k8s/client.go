@@ -43,6 +43,11 @@ func NewClient() (*Client, error) {
 		}
 	}
 
+	// Increase client timeouts to prevent timeout errors on slow Raspberry Pi clusters
+	config.Timeout = 30 * time.Second  // Individual request timeout
+	config.QPS = 50                    // Queries per second limit
+	config.Burst = 100                 // Burst capacity
+
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create clientset: %w", err)
