@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/automation/cluster-dashboard/internal/handlers"
-	"github.com/automation/cluster-dashboard/internal/k8s"
-	"github.com/automation/cluster-dashboard/internal/metrics"
-	"github.com/automation/cluster-dashboard/internal/talos"
+	"github.com/pi-cluster/cluster-dashboard/internal/handlers"
+	"github.com/pi-cluster/cluster-dashboard/internal/k8s"
+	"github.com/pi-cluster/cluster-dashboard/internal/metrics"
+	"github.com/pi-cluster/cluster-dashboard/internal/talos"
 )
 
 func main() {

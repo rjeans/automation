@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/automation/cluster-dashboard/internal/metrics"
+	"github.com/pi-cluster/cluster-dashboard/internal/metrics"
 )
 
 // Client implements the TalosClient interface

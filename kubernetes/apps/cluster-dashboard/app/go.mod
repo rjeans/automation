@@ -1,4 +1,4 @@
-module github.com/automation/cluster-dashboard
+module github.com/pi-cluster/cluster-dashboard
 
 go 1.23
 

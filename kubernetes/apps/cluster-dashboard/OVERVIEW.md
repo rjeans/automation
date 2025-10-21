@@ -440,6 +440,6 @@ MIT License
 
 ## Support
 
-- GitHub Issues: https://github.com/automation/cluster-dashboard/issues
+- GitHub Issues: https://github.com/pi-cluster/cluster-dashboard/issues
 - Documentation: See README.md and DEPLOYMENT.md
 - Community: (Add your community links)

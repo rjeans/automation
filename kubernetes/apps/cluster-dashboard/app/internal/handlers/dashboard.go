@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/automation/cluster-dashboard/internal/metrics"
+	"github.com/pi-cluster/cluster-dashboard/internal/metrics"
 )
 
 // DashboardHandler handles dashboard requests
