@@ -1,9 +1,8 @@
 # Introduction
 
-Configuration and infrastructure as code to enable:
+Configuration and infrastructure as code for a Talos Kubernetes cluster running on 4 Raspberry Pis.
 
-- Talos installation on 4 raspberry pis
-- Installation of n8n community edition on the raspberry pis
+This repository provides GitOps-based infrastructure management using Flux CD.
 
 # Project Roadmap
 

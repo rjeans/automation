@@ -1,13 +1,13 @@
 # Talos Kubernetes Cluster for Automation
 
-Production-grade Kubernetes cluster running on Raspberry Pi 4 hardware with Talos Linux, designed for hosting n8n workflow automation and other self-hosted services.
+Production-grade Kubernetes cluster running on Raspberry Pi 4 hardware with Talos Linux, designed for self-hosted services and automation workloads.
 
 ## 🎯 Project Goals
 
 - **Deterministic**: All infrastructure defined as code in Git
 - **Secure**: Encrypted secrets, minimal attack surface, automated security updates
 - **Production-Ready**: High availability, monitoring, backups, disaster recovery
-- **Automation-First**: n8n workflow platform for building automation agents
+- **Automation-Ready**: Platform for deploying workflow automation and custom services
 
 ## 📋 Quick Start
 
@@ -19,8 +19,7 @@ Production-grade Kubernetes cluster running on Raspberry Pi 4 hardware with Talo
    - [Storage (Local Path Provisioner)](./docs/03-storage-local-path.md)
    - [Ingress (Traefik)](./docs/05-ingress-traefik.md)
    - [TLS Certificates (cert-manager)](./docs/06-cert-manager.md)
-6. **Applications**:
-   - [n8n Workflow Automation](./docs/07-n8n-deployment.md)
+6. **Applications**: Deploy as needed via GitOps
 
 ## 🏗️ Architecture
 
@@ -36,8 +35,7 @@ Production-grade Kubernetes cluster running on Raspberry Pi 4 hardware with Talo
 - **Storage**: Local Path Provisioner ✅
 - **Ingress**: Traefik ✅
 - **External Access**: Cloudflare Tunnel ✅
-- **Monitoring**: Cluster Dashboard ✅ | Prometheus, Grafana ⬜
-- **Automation**: n8n ✅
+- **Monitoring**: Cluster Dashboard ✅ | Prometheus, Grafana ✅
 
 ## 📁 Repository Structure
 
@@ -48,13 +46,12 @@ automation/
 │       ├── flux-system/   # Flux controllers
 │       ├── sources/       # Helm repositories, Git sources
 │       ├── infrastructure/# Core services (Traefik, Metrics Server, Cloudflare)
-│       └── apps/          # Applications (n8n, cluster-dashboard)
+│       └── apps/          # Applications (cluster-dashboard, etc.)
 │
 ├── kubernetes/            # 📁 Reference and development (see kubernetes/README.md)
 │   ├── core/              # Original manifests (archived, not used by Flux)
 │   └── apps/
-│       ├── n8n/           # n8n configs (copied to flux/)
-│       └── cluster-dashboard/
+│       └── cluster-dashboard/  # cluster-dashboard configs
 │           ├── app/       # 🔧 Go application source code
 │           └── chart/     # Helm chart (reference)
 │
@@ -103,11 +100,11 @@ The `kubernetes/` directory is kept for reference only. See [kubernetes/README.m
 ### GitOps Workflow (Primary Method)
 ```bash
 # Make changes to manifests
-vim flux/clusters/talos/apps/n8n/helmrelease.yaml
+vim flux/clusters/talos/apps/cluster-dashboard/helmrelease.yaml
 
 # Commit and push
 git add flux/
-git commit -m "Update n8n configuration"
+git commit -m "Update cluster configuration"
 git push
 
 # Flux automatically applies within 1 minute!
@@ -135,7 +132,7 @@ talosctl health
 flux logs --all-namespaces --follow
 
 # Application logs
-kubectl logs -f -n n8n deployment/n8n
+kubectl logs -f -n monitoring deployment/kube-prometheus-stack-grafana
 
 # Talos system logs
 talosctl logs -f -n <node-ip> kubelet
@@ -154,7 +151,7 @@ Once monitoring is deployed (Phase 3):
 ### Automated Backups
 - etcd snapshots (hourly)
 - Persistent volumes (Velero, daily)
-- n8n workflows (exported daily)
+- Application data (exported as needed)
 - PostgreSQL dumps (daily)
 
 ### Manual Backup
@@ -201,7 +198,6 @@ helm template my-release chart/ -f values.yaml
 - [04 - PoE HAT Configuration](./docs/04-poe-hat-configuration.md) - Custom Talos image with fan control
 - [05 - Ingress (Traefik)](./docs/05-ingress-traefik.md) - HTTP/HTTPS routing and load balancing
 - [06 - cert-manager](./docs/06-cert-manager.md) - Automatic TLS certificate management
-- [07 - n8n Deployment](./docs/07-n8n-deployment.md) - Workflow automation platform with PostgreSQL
 - [Security Remediation](./SECURITY-REMEDIATION.md) - Security best practices and lessons learned
 
 ## 🛠️ Tools Required
@@ -223,7 +219,6 @@ This project is for personal use. Use at your own risk.
 
 - [Talos Linux Documentation](https://www.talos.dev/)
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
-- [n8n Documentation](https://docs.n8n.io/)
 - [SOPS Documentation](https://github.com/mozilla/sops)
 - [FluxCD Documentation](https://fluxcd.io/)
 
@@ -240,7 +235,6 @@ This project is for personal use. Use at your own risk.
   - ✅ Storage (Local Path Provisioner with 1TB SSD)
   - ✅ Ingress (Traefik v3.2.2)
   - ✅ cert-manager (v1.16.2)
-- ✅ n8n deployed (v1.113.3 with PostgreSQL)
-- ⬜ Monitoring deployed
+- ✅ Monitoring (Prometheus, Grafana, Alertmanager)
 
 See [ROADMAP.md](./ROADMAP.md) for detailed progress.

@@ -90,16 +90,84 @@ talosctl -n 192.168.1.11 ls /var/mnt/storage
 talosctl -n 192.168.1.11 df | grep storage
 ```
 
-## Step 2: Deploy Local Path Provisioner
+## Step 2: Configure Talos for subPath Support
 
-### 2.1 Install Local Path Provisioner
+### 2.1 Understanding the Requirement
+
+Talos Linux requires additional kubelet configuration to properly support `subPath` mounts with local-path-provisioner. Without this configuration, fsGroup permissions don't propagate correctly to subPath-mounted volumes, causing permission errors in applications.
+
+### 2.2 Create Talos Kubelet Patch
+
+The patch file `talos/patches/kubelet-local-path.yaml` configures kubelet with extraMounts:
+
+```yaml
+# Configure kubelet to properly handle subPath mounts for local-path-provisioner
+# This is required for Talos to support subPath mounts with local-path-provisioner
+# Without this, fsGroup permissions don't propagate correctly to subPath mounts
+# Path must match the local-path-provisioner storage location
+machine:
+  kubelet:
+    extraMounts:
+      - destination: /var/lib/rancher/local-path-provisioner
+        type: bind
+        source: /var/lib/rancher/local-path-provisioner
+        options:
+          - bind
+          - rshared
+          - rw
+```
+
+### 2.3 Apply Kubelet Patch to All Nodes
+
+This patch must be applied to **all cluster nodes** (both control plane and workers):
+
+```bash
+# Apply to all nodes
+for node in 192.168.1.11 192.168.1.12 192.168.1.13 192.168.1.14; do
+  echo "Applying kubelet patch to node $node..."
+  talosctl patch machineconfig --nodes $node \
+    -p @talos/patches/kubelet-local-path.yaml \
+    --mode=no-reboot
+done
+```
+
+### 2.4 Restart Kubelet Services
+
+After applying the patch, restart kubelet on all nodes to activate the configuration:
+
+```bash
+# Restart kubelet on all nodes
+for node in 192.168.1.11 192.168.1.12 192.168.1.13 192.168.1.14; do
+  echo "Restarting kubelet on node $node..."
+  talosctl service kubelet restart --nodes $node
+done
+
+# Wait for cluster to stabilize
+sleep 30
+kubectl get nodes
+```
+
+All nodes should show `Ready` status after kubelet restarts.
+
+### 2.5 Verify Configuration
+
+```bash
+# Check that extraMounts is in the machine config
+talosctl get machineconfig --nodes 192.168.1.11 -o yaml | grep -A 10 "extraMounts"
+```
+
+You should see the bind mount configuration in the output.
+
+## Step 3: Deploy Local Path Provisioner
+
+### 3.1 Install Local Path Provisioner
 
 ```bash
 # Deploy the provisioner
 kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.30/deploy/local-path-storage.yaml
 ```
 
-### 2.2 Configure Storage Path
+### 3.2 Configure Storage Path
 
 Update the ConfigMap to use our mounted storage:
 
@@ -118,7 +186,7 @@ kubectl -n local-path-storage patch configmap local-path-config --type merge -p 
 kubectl -n local-path-storage rollout restart deployment local-path-provisioner
 ```
 
-### 2.3 Fix PodSecurity Labels
+### 3.3 Fix PodSecurity Labels
 
 The helper pods need privileged access to create volumes:
 
@@ -131,7 +199,7 @@ kubectl label namespace local-path-storage \
   --overwrite
 ```
 
-### 2.4 Set as Default StorageClass
+### 3.4 Set as Default StorageClass
 
 ```bash
 # Make local-path the default StorageClass
@@ -148,9 +216,9 @@ NAME                   PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE
 local-path (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  5m
 ```
 
-## Step 3: Test Storage
+## Step 4: Test Storage
 
-### 3.1 Create Test PVC and Pod
+### 4.1 Create Test PVC and Pod
 
 ```bash
 # Create test resources
@@ -192,7 +260,7 @@ spec:
 EOF
 ```
 
-### 3.2 Verify Storage Works
+### 4.2 Verify Storage Works
 
 ```bash
 # Check PVC is bound
@@ -208,7 +276,7 @@ kubectl exec test-pod -- cat /data/test.txt
 talosctl -n 192.168.1.11 ls /var/mnt/storage/
 ```
 
-### 3.3 Cleanup Test Resources
+### 4.3 Cleanup Test Resources
 
 ```bash
 kubectl delete pod test-pod
@@ -219,7 +287,7 @@ kubectl delete pvc test-pvc
 
 ### Deploying Stateful Applications
 
-All stateful applications (PostgreSQL, Redis, n8n, etc.) must:
+All stateful applications (PostgreSQL, Redis, monitoring stack, etc.) must:
 
 1. **Target node .11** with node selector:
    ```yaml
@@ -338,7 +406,7 @@ talosctl -n 192.168.1.11 copy /var/mnt/storage/pvc-xxx /backup/location/
 ### Option 3: Application-Level Backups
 
 - PostgreSQL: `pg_dump` to external location
-- n8n: Export workflows via API
+- Application data: Export/backup via application-specific tools
 - Files: Sync to cloud storage (S3, Backblaze, etc.)
 
 ## Troubleshooting
@@ -467,10 +535,10 @@ kubectl delete -f https://raw.githubusercontent.com/rancher/local-path-provision
 
 With storage configured, you can now:
 
-1. **Deploy Ingress Controller** - [docs/05-ingress-setup.md](./05-ingress-setup.md) *(coming next)*
+1. **Deploy Ingress Controller** - [docs/05-ingress-traefik.md](./05-ingress-traefik.md)
 2. **Deploy cert-manager** - For automatic TLS certificates
-3. **Deploy PostgreSQL** - Database for n8n
-4. **Deploy n8n** - Workflow automation platform
+3. **Deploy monitoring stack** - Prometheus, Grafana, Alertmanager
+4. **Deploy stateful applications** - As needed for your use case
 
 ---
 
