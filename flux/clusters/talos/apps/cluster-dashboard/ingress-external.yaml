@@ -9,7 +9,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
     traefik.ingress.kubernetes.io/router.priority: "10"  # Higher priority than catch-all
     # Strip /dashboard prefix before forwarding to service
-    traefik.ingress.kubernetes.io/router.middlewares: cluster-dashboard-stripprefix@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: cluster-dashboard-cluster-dashboard-stripprefix@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
