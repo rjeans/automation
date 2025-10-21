@@ -1,0 +1,11 @@
+# Traefik middleware to strip /grafana prefix
+# This allows Grafana to receive requests at / instead of /grafana
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: grafana-stripprefix
+  namespace: monitoring
+spec:
+  stripPrefix:
+    prefixes:
+      - /grafana

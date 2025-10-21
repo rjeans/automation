@@ -1,0 +1,25 @@
+# External ingress for Grafana via Cloudflare Tunnel
+# Handles traffic from cluster.jeans-host.net/grafana
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-external
+  namespace: monitoring
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.priority: "10"  # Higher priority than catch-all
+    # Strip /grafana prefix before forwarding to service
+    traefik.ingress.kubernetes.io/router.middlewares: monitoring-grafana-stripprefix@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: cluster.jeans-host.net
+    http:
+      paths:
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            name: kube-prometheus-stack-grafana
+            port:
+              number: 80

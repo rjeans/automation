@@ -100,6 +100,11 @@ spec:
         fsGroup: 472
         runAsUser: 472
         runAsGroup: 472
+      # Grafana configuration for serving under /grafana path
+      grafana.ini:
+        server:
+          root_url: "%(protocol)s://%(domain)s/grafana/"
+          serve_from_sub_path: true
       # Grafana ingress
       ingress:
         enabled: true
