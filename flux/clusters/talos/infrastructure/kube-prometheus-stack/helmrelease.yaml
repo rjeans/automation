@@ -51,7 +51,7 @@ spec:
         serviceMonitorSelectorNilUsesHelmValues: false
         podMonitorSelectorNilUsesHelmValues: false
         ruleSelectorNilUsesHelmValues: false
-        # Add initContainer to fix permissions on PVC (subPath issue with Talos)
+        # Add initContainer to fix permissions on PVC
         initContainers:
           - name: fix-permissions
             image: busybox:latest
@@ -59,7 +59,6 @@ spec:
               - sh
               - -c
               - |
-                mkdir -p /prometheus/prometheus-db
                 chown -R 1000:2000 /prometheus
                 chmod -R 755 /prometheus
             volumeMounts:
@@ -68,11 +67,13 @@ spec:
             securityContext:
               runAsUser: 0
               runAsNonRoot: false
+        # Use fsGroup for proper permission handling
         securityContext:
           fsGroup: 2000
           runAsGroup: 2000
           runAsNonRoot: true
           runAsUser: 1000
+          fsGroupChangePolicy: "OnRootMismatch"
 
     # Grafana configuration
     grafana:
