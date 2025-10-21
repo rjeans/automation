@@ -1,0 +1,11 @@
+# Traefik middleware to strip /dashboard prefix
+# This allows the app to receive requests at / instead of /dashboard
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: cluster-dashboard-stripprefix
+  namespace: cluster-dashboard
+spec:
+  stripPrefix:
+    prefixes:
+      - /dashboard

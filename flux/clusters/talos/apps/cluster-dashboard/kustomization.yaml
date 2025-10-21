@@ -5,4 +5,5 @@ resources:
   - namespace.yaml
   - helmrelease.yaml
   - ingress-external.yaml
+  - middleware.yaml
   - network-policy.yaml
