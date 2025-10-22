@@ -11,7 +11,7 @@ spec:
   chart:
     spec:
       chart: ./charts/cluster-dashboard
-      version: "1.0.3"
+      version: "1.0.4"
       sourceRef:
         kind: GitRepository
         name: flux-system
@@ -31,8 +31,8 @@ spec:
     replicaCount: 2
     image:
       repository: ghcr.io/rjeans/cluster-dashboard
-      tag: "v1.0.3"
-      pullPolicy: IfNotPresent
+      tag: "v1.0.4"
+      pullPolicy: Always  # Changed from IfNotPresent to ensure latest image is pulled
     service:
       type: ClusterIP
       port: 80
