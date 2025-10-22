@@ -2,8 +2,8 @@ apiVersion: v2
 name: cluster-dashboard
 description: Real-time monitoring dashboard for Talos Kubernetes cluster
 type: application
-version: 1.0.6
-appVersion: "1.0.6"
+version: 1.0.9
+appVersion: "1.0.9"
 keywords:
   - kubernetes
   - monitoring
