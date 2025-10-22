@@ -117,6 +117,7 @@ spec:
         # Redirect logout to Cloudflare Access logout page
         auth:
           signout_redirect_url: "https://grafana.jeans-host.net/cdn-cgi/access/logout"
+          disable_login_form: false
         # Disable anonymous access
         auth.anonymous:
           enabled: false
