@@ -91,9 +91,32 @@ jobs:
           echo "Changes to be committed:"
           git diff charts/cluster-dashboard/Chart.yaml charts/cluster-dashboard/values.yaml
 
-          # Commit and push the changes
+          # Commit and push the chart changes
           git add charts/cluster-dashboard/Chart.yaml charts/cluster-dashboard/values.yaml
           git commit -m "chore: Bump cluster-dashboard chart to v$VERSION"
+          git push origin main
+
+      - name: Update Flux HelmRelease
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Update HelmRelease chart version and image tag
+          sed -i "s/version: \".*\"/version: \"$VERSION\"/" flux/clusters/talos/apps/cluster-dashboard/helmrelease.yaml
+          sed -i "s/tag: \"v.*\"/tag: \"v$VERSION\"/" flux/clusters/talos/apps/cluster-dashboard/helmrelease.yaml
+
+          # Check if there are changes to commit
+          if git diff --quiet flux/clusters/talos/apps/cluster-dashboard/helmrelease.yaml; then
+            echo "No HelmRelease changes needed - already at version $VERSION"
+            exit 0
+          fi
+
+          # Show what changed
+          echo "HelmRelease changes:"
+          git diff flux/clusters/talos/apps/cluster-dashboard/helmrelease.yaml
+
+          # Commit and push
+          git add flux/clusters/talos/apps/cluster-dashboard/helmrelease.yaml
+          git commit -m "chore: Update cluster-dashboard HelmRelease to v$VERSION"
           git push origin main
 
       - name: Create GitHub Release
