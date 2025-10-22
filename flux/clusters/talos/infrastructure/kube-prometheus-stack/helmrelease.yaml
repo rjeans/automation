@@ -100,11 +100,11 @@ spec:
         fsGroup: 472
         runAsUser: 472
         runAsGroup: 472
-      # Grafana configuration for serving under /grafana path
+      # Grafana configuration for serving at root path
       grafana.ini:
         server:
-          root_url: "%(protocol)s://%(domain)s/grafana/"
-          serve_from_sub_path: true
+          domain: grafana.jeans-host.net
+          root_url: "%(protocol)s://%(domain)s/"
       # Grafana ingress - disabled, using external ingress instead
       ingress:
         enabled: false
