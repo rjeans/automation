@@ -1,5 +1,5 @@
 # External ingress for cluster-dashboard via Cloudflare Tunnel
-# Handles traffic from cluster.jeans-host.net/dashboard
+# Handles traffic from cluster-dashboard.jeans-host.net
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -8,15 +8,13 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
     traefik.ingress.kubernetes.io/router.priority: "10"  # Higher priority than catch-all
-    # Strip /dashboard prefix before forwarding to service
-    traefik.ingress.kubernetes.io/router.middlewares: cluster-dashboard-cluster-dashboard-stripprefix@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
-  - host: cluster.jeans-host.net
+  - host: cluster-dashboard.jeans-host.net
     http:
       paths:
-      - path: /dashboard
+      - path: /
         pathType: Prefix
         backend:
           service:

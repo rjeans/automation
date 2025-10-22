@@ -78,9 +78,26 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
+          # Check if there are changes to commit
+          if git diff --quiet charts/cluster-dashboard/Chart.yaml charts/cluster-dashboard/values.yaml; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          # Checkout main branch to avoid detached HEAD state
+          git fetch origin main
+          git checkout main
+          git pull origin main
+
+          # Apply the changes again (they were made in detached HEAD)
+          VERSION="${{ steps.version.outputs.version }}"
+          sed -i "s/^version: .*/version: $VERSION/" charts/cluster-dashboard/Chart.yaml
+          sed -i "s/^appVersion: .*/appVersion: \"$VERSION\"/" charts/cluster-dashboard/Chart.yaml
+          sed -i "s/tag: .*/tag: \"v$VERSION\"/" charts/cluster-dashboard/values.yaml
+
           git add charts/cluster-dashboard/Chart.yaml charts/cluster-dashboard/values.yaml
-          git commit -m "chore: Bump cluster-dashboard chart to v${{ steps.version.outputs.version }}" || echo "No changes to commit"
-          git push origin HEAD:main || echo "Nothing to push"
+          git commit -m "chore: Bump cluster-dashboard chart to v${{ steps.version.outputs.version }}"
+          git push origin main
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
