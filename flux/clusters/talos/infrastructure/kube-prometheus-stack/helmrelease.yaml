@@ -114,6 +114,9 @@ spec:
           auto_sign_up: true
           whitelist: "" # Allow all IPs since Cloudflare handles auth
           headers: "Name:Cf-Access-Authenticated-User-Email"
+        # Redirect logout to Cloudflare Access logout page
+        auth:
+          signout_redirect_url: "https://grafana.jeans-host.net/cdn-cgi/access/logout"
         # Disable anonymous access
         auth.anonymous:
           enabled: false

@@ -176,6 +176,27 @@ Verify Cloudflare is sending the authentication header:
 
 If missing, verify your Cloudflare Access application configuration.
 
+### Logout Not Working / Automatic Re-login
+
+**Problem**: When you click "Sign Out" in Grafana, you're immediately logged back in.
+
+**Cause**: Cloudflare Access maintains an active session. When Grafana redirects to the homepage after logout, Cloudflare re-authenticates you automatically.
+
+**Solution**: The configuration includes a logout redirect to Cloudflare's logout endpoint:
+```yaml
+auth:
+  signout_redirect_url: "https://grafana.jeans-host.net/cdn-cgi/access/logout"
+```
+
+This setting makes Grafana redirect to Cloudflare's logout page, which:
+1. Clears the Cloudflare Access session
+2. Shows a "You have been logged out" message
+3. Requires re-authentication to access Grafana again
+
+**To fully log out:**
+- Click "Sign Out" in Grafana → Redirected to Cloudflare logout page
+- Or manually visit: `https://grafana.jeans-host.net/cdn-cgi/access/logout`
+
 ## Disabling Auth Proxy
 
 If you need to disable Cloudflare Access integration and return to standard Grafana login:
