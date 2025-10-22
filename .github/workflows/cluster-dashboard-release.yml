@@ -60,43 +60,40 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Update Helm Chart
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-
-          # Update Chart.yaml
-          sed -i "s/^version: .*/version: $VERSION/" charts/cluster-dashboard/Chart.yaml
-          sed -i "s/^appVersion: .*/appVersion: \"$VERSION\"/" charts/cluster-dashboard/Chart.yaml
-
-          # Update values.yaml
-          sed -i "s/tag: .*/tag: \"v$VERSION\"/" charts/cluster-dashboard/values.yaml
-
-          echo "Updated chart to version $VERSION"
-
-      - name: Commit chart updates
+      - name: Update and commit chart updates
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          # Check if there are changes to commit
-          if git diff --quiet charts/cluster-dashboard/Chart.yaml charts/cluster-dashboard/values.yaml; then
-            echo "No changes to commit"
-            exit 0
-          fi
+          VERSION="${{ steps.version.outputs.version }}"
 
-          # Checkout main branch to avoid detached HEAD state
+          # Fetch latest main branch
           git fetch origin main
-          git checkout main
+
+          # Switch to main branch (use -f to force, discarding any local changes from detached HEAD)
+          git checkout -f main
+
+          # Pull latest changes to ensure we're up to date
           git pull origin main
 
-          # Apply the changes again (they were made in detached HEAD)
-          VERSION="${{ steps.version.outputs.version }}"
+          # Now apply the version changes on the clean main branch
           sed -i "s/^version: .*/version: $VERSION/" charts/cluster-dashboard/Chart.yaml
           sed -i "s/^appVersion: .*/appVersion: \"$VERSION\"/" charts/cluster-dashboard/Chart.yaml
           sed -i "s/tag: .*/tag: \"v$VERSION\"/" charts/cluster-dashboard/values.yaml
 
+          # Check if there are actually any changes to commit
+          if git diff --quiet charts/cluster-dashboard/Chart.yaml charts/cluster-dashboard/values.yaml; then
+            echo "No changes needed - chart already at version $VERSION"
+            exit 0
+          fi
+
+          # Show what changed for debugging
+          echo "Changes to be committed:"
+          git diff charts/cluster-dashboard/Chart.yaml charts/cluster-dashboard/values.yaml
+
+          # Commit and push the changes
           git add charts/cluster-dashboard/Chart.yaml charts/cluster-dashboard/values.yaml
-          git commit -m "chore: Bump cluster-dashboard chart to v${{ steps.version.outputs.version }}"
+          git commit -m "chore: Bump cluster-dashboard chart to v$VERSION"
           git push origin main
 
       - name: Create GitHub Release
