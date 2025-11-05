@@ -274,7 +274,9 @@ Deploy all infrastructure and applications automatically via Flux:
 flux bootstrap github --owner=rjeans --repository=automation ...
 
 # 2. Restore secrets (5 minutes)
-kubectl create secret generic talos-config -n cluster-dashboard ...
+kubectl create secret generic talos-config \
+    -n cluster-dashboard \
+    --from-file=$HOME/.talos-secrets/pi-cluster/talosconfig
 kubectl create secret generic cloudflare-tunnel-token -n cloudflare-tunnel ...
 
 # 3. Watch Flux auto-deploy everything (15 minutes)

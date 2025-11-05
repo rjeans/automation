@@ -456,7 +456,7 @@ Flux cannot deploy secrets from Git (security). Restore them manually:
 # Cluster dashboard Talos config (if applicable)
 kubectl create secret generic talos-config \
     -n cluster-dashboard \
-    --from-file=talosconfig=~/.talos-secrets/automation/talosconfig
+    --from-file=$HOME/.talos-secrets/pi-cluster/talosconfig
 
 # Cloudflare tunnel token (if applicable)
 kubectl create secret generic cloudflare-tunnel-token \

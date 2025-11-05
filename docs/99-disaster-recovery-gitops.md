@@ -308,8 +308,8 @@ kubectl apply -f "${BACKUP_DIR}/talos-config-secret.yaml"
 kubectl create namespace cluster-dashboard --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl create secret generic talos-config \
-  --from-file=talosconfig=~/.talos-secrets/automation/talosconfig \
-  -n cluster-dashboard
+  -n cluster-dashboard \
+  --from-file=$HOME/.talos-secrets/pi-cluster/talosconfig
 
 # Verify
 kubectl get secret -n cluster-dashboard talos-config

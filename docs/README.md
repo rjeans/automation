@@ -60,7 +60,9 @@ This directory contains comprehensive documentation for the Talos Kubernetes clu
 flux bootstrap github --owner=rjeans --repository=automation ...
 
 # 3. Restore secrets
-kubectl create secret generic talos-config -n cluster-dashboard ...
+kubectl create secret generic talos-config \
+    -n cluster-dashboard \
+    --from-file=$HOME/.talos-secrets/pi-cluster/talosconfig
 kubectl create secret generic cloudflare-tunnel-token -n cloudflare-tunnel ...
 
 # 4. Watch Flux deploy everything

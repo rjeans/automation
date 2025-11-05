@@ -249,7 +249,7 @@ flux bootstrap github \
 # Restore secrets (examples)
 kubectl create secret generic talos-config \
     -n cluster-dashboard \
-    --from-file=talosconfig=~/.talos-secrets/pi-cluster/talosconfig
+    --from-file=$HOME/.talos-secrets/pi-cluster/talosconfig
 
 kubectl create secret generic cloudflare-tunnel-token \
     -n cloudflare-tunnel \

@@ -279,7 +279,9 @@ talosctl -n <node-with-vip> reboot
 flux bootstrap github --owner=rjeans --repository=automation ...
 
 # Restore secrets
-kubectl create secret generic talos-config -n cluster-dashboard ...
+kubectl create secret generic talos-config \
+    -n cluster-dashboard \
+    --from-file=$HOME/.talos-secrets/pi-cluster/talosconfig
 kubectl create secret generic cloudflare-tunnel-token -n cloudflare-tunnel ...
 
 # Watch deployment
