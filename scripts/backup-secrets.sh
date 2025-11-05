@@ -150,6 +150,7 @@ chmod -R 600 "${BACKUP_DIR}"/*
 chmod 700 "${BACKUP_DIR}"
 chmod 700 "${BACKUP_DIR}/kubernetes-secrets"
 chmod 700 "${BACKUP_DIR}/talos-configs"
+chmod 700 "${BACKUP_DIR}/github"
 
 # Create a summary
 echo ""
