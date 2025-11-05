@@ -1,0 +1,12 @@
+# Main kustomization for the Talos cluster
+# This loads infrastructure first, then apps
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Load infrastructure.yaml first (contains infrastructure kustomization)
+  - infrastructure.yaml
+  # Then load apps.yaml (contains apps kustomization with dependsOn: infrastructure)
+  - apps.yaml
+  # Load other resources
+  - sources
+  - notifications
