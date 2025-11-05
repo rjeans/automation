@@ -15,11 +15,35 @@ Complete cluster rebuild from GitOps. Everything except secrets is automatically
 
 ### 1.1 Boot Nodes in Maintenance Mode
 
-If starting from scratch (SD cards freshly flashed):
+**Option A: Fresh SD cards** (SD cards freshly flashed):
 1. Insert SD cards into Raspberry Pis
 2. Power on via PoE
 3. Wait 60-90 seconds for nodes to boot
 4. Nodes will be in **maintenance mode** with temporary DHCP IPs
+
+**Option B: Reset existing cluster** (nodes currently running):
+```bash
+# Export talosctl config
+export TALOSCONFIG=~/.talos-secrets/pi-cluster/talosconfig
+
+# Reset each node to maintenance mode (wipes everything!)
+# Do workers first, then control plane nodes one at a time
+talosctl reset --graceful --reboot -n 192.168.1.14  # worker
+sleep 60
+
+talosctl reset --graceful --reboot -n 192.168.1.13  # cp3
+sleep 60
+
+talosctl reset --graceful --reboot -n 192.168.1.12  # cp2
+sleep 60
+
+talosctl reset --graceful --reboot -n 192.168.1.11  # cp1
+sleep 60
+
+# Nodes will reboot into maintenance mode with DHCP IPs
+```
+
+**⚠️ WARNING**: `talosctl reset` wipes all data and cluster state. Only use for disaster recovery or full cluster rebuild.
 
 **Important**: You must apply configs while nodes are in maintenance mode, before they become a proper cluster.
 
