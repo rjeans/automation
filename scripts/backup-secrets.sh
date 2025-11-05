@@ -14,6 +14,7 @@ echo ""
 # Create backup directory
 mkdir -p "${BACKUP_DIR}/kubernetes-secrets"
 mkdir -p "${BACKUP_DIR}/talos-configs"
+mkdir -p "${BACKUP_DIR}/github"
 
 # Backup Talos configurations
 echo "📦 Backing up Talos configurations..."
@@ -50,6 +51,36 @@ if kubectl get secrets -n monitoring &>/dev/null; then
     echo "  ✅ monitoring namespace secrets"
 fi
 
+# Prompt for GitHub PAT
+echo ""
+echo "🔑 GitHub PAT (Personal Access Token)..."
+echo "   This is needed to bootstrap Flux during recovery."
+echo ""
+read -p "   Do you want to save your GitHub PAT? (y/n): " -n 1 -r
+echo ""
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    read -s -p "   Enter your GitHub PAT: " GITHUB_PAT
+    echo ""
+    if [ -n "$GITHUB_PAT" ]; then
+        echo "$GITHUB_PAT" > "${BACKUP_DIR}/github/GITHUB_TOKEN.txt"
+        chmod 600 "${BACKUP_DIR}/github/GITHUB_TOKEN.txt"
+        echo "  ✅ GitHub PAT saved"
+    else
+        echo "  ⚠️  No PAT entered, skipping"
+    fi
+else
+    cat > "${BACKUP_DIR}/github/README.txt" <<EOF
+GitHub PAT not saved during backup.
+
+You will need a GitHub PAT with 'repo' permissions to bootstrap Flux.
+Create one at: https://github.com/settings/tokens
+
+When restoring, export it before running flux bootstrap:
+export GITHUB_TOKEN=<your-pat>
+EOF
+    echo "  ⚠️  Skipped - Add PAT manually during recovery"
+fi
+
 # Create a README in the backup
 cat > "${BACKUP_DIR}/README.md" <<EOF
 # Cluster Backup - ${BACKUP_DATE}
@@ -67,6 +98,9 @@ cat > "${BACKUP_DIR}/README.md" <<EOF
 - cloudflare-tunnel-token.yaml - Cloudflare tunnel authentication
 - monitoring-secrets.yaml - Monitoring namespace secrets (if any)
 
+### GitHub
+- GITHUB_TOKEN.txt - GitHub PAT for Flux bootstrap (if saved)
+
 ## Restore Instructions
 
 ### Restore Talos Configs
@@ -74,6 +108,13 @@ cat > "${BACKUP_DIR}/README.md" <<EOF
 mkdir -p ~/.talos-secrets/pi-cluster
 cp talos-configs/* ~/.talos-secrets/pi-cluster/
 chmod 600 ~/.talos-secrets/pi-cluster/*
+\`\`\`
+
+### Restore GitHub PAT
+\`\`\`bash
+# For Flux bootstrap:
+export GITHUB_TOKEN=\$(cat github/GITHUB_TOKEN.txt)
+# Or manually set: export GITHUB_TOKEN=<your-pat>
 \`\`\`
 
 ### Restore Kubernetes Secrets
@@ -89,6 +130,7 @@ kubectl apply -f kubernetes-secrets/cloudflare-tunnel-token.yaml
 - Talos API certificates
 - Kubernetes cluster certificates
 - Application secrets
+- GitHub Personal Access Token (if saved)
 
 **Store securely:**
 - Encrypted external drive
