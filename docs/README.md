@@ -9,6 +9,7 @@ This directory contains comprehensive documentation for the Talos Kubernetes clu
 1. **[Network Planning](00-network-plan.md)** - Understand the network architecture
 2. **[Prerequisites](01-prerequisites.md)** - Install required tools
 3. **[Cluster Rebuild](02-cluster-rebuild.md)** - Build the Talos cluster
+   - **[VIP Rebuild](talos-vip-rebuild.md)** - For HA with Virtual IP (recommended)
 4. **[GitOps Quick Start](GITOPS-QUICKSTART.md)** - Bootstrap Flux and deploy everything
 
 **Disaster recovery?** → [99-disaster-recovery-gitops.md](99-disaster-recovery-gitops.md)
@@ -22,6 +23,7 @@ This directory contains comprehensive documentation for the Talos Kubernetes clu
 | [00-network-plan.md](00-network-plan.md) | ✅ Current | IP addressing, DNS, network architecture |
 | [01-prerequisites.md](01-prerequisites.md) | ✅ Current | Required software and tools installation |
 | [02-cluster-rebuild.md](02-cluster-rebuild.md) | ✅ Updated | Talos cluster rebuild (manual layer only) |
+| [talos-vip-rebuild.md](talos-vip-rebuild.md) | ✅ **NEW** | Talos cluster rebuild with VIP for HA |
 | [03-storage-local-path.md](03-storage-local-path.md) | ✅ Current | Local path provisioner configuration |
 | [04-poe-hat-configuration.md](04-poe-hat-configuration.md) | ✅ Current | Raspberry Pi PoE HAT fan control |
 
@@ -132,7 +134,9 @@ flux get helmrelease myapp --watch
 
 **Networking**:
 - Network: 192.168.1.0/24
-- Control plane VIP: 192.168.1.11
+- Control plane VIP: 192.168.1.10 (HA failover, **to be implemented**)
+- Control plane nodes: 192.168.1.11, 192.168.1.12, 192.168.1.13
+- Worker node: 192.168.1.14
 - NodePort ingress: 30080 (HTTP), 30443 (HTTPS)
 - External domain: dashboard.jeansy.org (via Cloudflare Tunnel)
 
@@ -315,7 +319,8 @@ When updating documentation:
 
 ---
 
-**Documentation Last Updated**: 2025-10-17
-**Cluster Version**: Kubernetes v1.34.0 on Talos v1.11.2
+**Documentation Last Updated**: 2025-11-05
+**Cluster Version**: Kubernetes v1.31.2 on Talos v1.8.x
 **GitOps**: Flux v2.7.2
 **Management**: Fully GitOps-managed cluster
+**VIP Status**: Documentation and scripts ready, implementation pending

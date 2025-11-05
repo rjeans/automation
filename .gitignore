@@ -71,3 +71,4 @@ cloudflare-token*
 
 # Playwright MCP
 .playwright-mcp/
+talos/.schematic-id

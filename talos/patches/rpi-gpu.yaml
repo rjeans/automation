@@ -1,6 +1,0 @@
-machine:
-  install:
-    extensions:
-      - siderolabs/vc4
-  sysctls:
-    vm.overcommit_memory: "1"
