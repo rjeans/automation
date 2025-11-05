@@ -22,28 +22,33 @@ Complete cluster rebuild from GitOps. Everything except secrets is automatically
 4. Nodes will be in **maintenance mode** with temporary DHCP IPs
 
 **Option B: Reset existing cluster** (nodes currently running):
-```bash
-# Export talosctl config
-export TALOSCONFIG=~/.talos-secrets/pi-cluster/talosconfig
 
-# Reset each node to maintenance mode (wipes everything!)
-# Do workers first, then control plane nodes one at a time
-talosctl reset --graceful --reboot -n 192.168.1.14  # worker
-sleep 60
+**⚠️ WARNING**: On Raspberry Pi, `talosctl reset` wipes the boot partition, making nodes unbootable. You MUST reflash SD cards after reset.
 
-talosctl reset --graceful --reboot -n 192.168.1.13  # cp3
-sleep 60
+For disaster recovery from a running cluster, you have two choices:
 
-talosctl reset --graceful --reboot -n 192.168.1.12  # cp2
-sleep 60
+1. **Power off and reflash** (recommended):
+   ```bash
+   # Gracefully shutdown nodes
+   talosctl shutdown -n 192.168.1.11,192.168.1.12,192.168.1.13,192.168.1.14
 
-talosctl reset --graceful --reboot -n 192.168.1.11  # cp1
-sleep 60
+   # Remove SD cards and reflash with Talos image
+   # Then follow Option A
+   ```
 
-# Nodes will reboot into maintenance mode with DHCP IPs
-```
+2. **Use reset** (requires reflashing):
+   ```bash
+   # Reset wipes boot partition - nodes won't boot after this!
+   talosctl reset --graceful --reboot -n 192.168.1.14  # worker
+   talosctl reset --graceful --reboot -n 192.168.1.13  # cp3
+   talosctl reset --graceful --reboot -n 192.168.1.12  # cp2
+   talosctl reset --graceful --reboot -n 192.168.1.11  # cp1
 
-**⚠️ WARNING**: `talosctl reset` wipes all data and cluster state. Only use for disaster recovery or full cluster rebuild.
+   # Nodes will fail to boot - must reflash SD cards
+   # Then follow Option A
+   ```
+
+**For disaster recovery**: Just power off, reflash SD cards, and follow Option A.
 
 **Important**: You must apply configs while nodes are in maintenance mode, before they become a proper cluster.
 
