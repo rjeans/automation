@@ -13,32 +13,74 @@ Complete cluster rebuild from GitOps. Everything except secrets is automatically
 
 ## Phase 1: Rebuild Talos (20 min)
 
-### 1.1 Configure talosctl
+### 1.1 Boot Nodes in Maintenance Mode
+
+If starting from scratch (SD cards freshly flashed):
+1. Insert SD cards into Raspberry Pis
+2. Power on via PoE
+3. Wait 60-90 seconds for nodes to boot
+4. Nodes will be in **maintenance mode** with temporary DHCP IPs
+
+**Important**: You must apply configs while nodes are in maintenance mode, before they become a proper cluster.
+
+### 1.2 Find Maintenance Mode IPs (if needed)
+
+If nodes got different DHCP IPs, check your router or use:
 ```bash
-export TALOSCONFIG=~/.talos-secrets/pi-cluster/talosconfig
-talosctl config endpoint 192.168.1.11
-talosctl config node 192.168.1.11
+# Nodes should respond on their configured static IPs if already set
+# Or check DHCP leases in your router
+# Typical DHCP range: 192.168.1.100-200
+
+# Test if nodes respond on expected IPs
+for ip in 192.168.1.11 192.168.1.12 192.168.1.13 192.168.1.14; do
+    echo -n "$ip: "
+    ping -c 2 -W 2 $ip > /dev/null 2>&1 && echo "✓" || echo "✗"
+done
 ```
 
-### 1.2 Apply Node Configurations
+### 1.3 Apply Node Configurations
+
 ```bash
+export TALOSCONFIG=~/.talos-secrets/pi-cluster/talosconfig
 cd /path/to/pi-cluster/talos
 
 # Apply configs to all nodes (use scripts if available)
 ./apply-static-ip-configs.sh
+# Script will prompt for current IPs if they differ from defaults
 
-# Or manually:
+# Or manually with --insecure flag (nodes in maintenance mode):
 talosctl apply-config --insecure -n 192.168.1.11 \
     --file ~/.talos-secrets/pi-cluster/node11.yaml
-# Repeat for .12, .13, .14 with appropriate configs
+
+talosctl apply-config --insecure -n 192.168.1.12 \
+    --file ~/.talos-secrets/pi-cluster/node12.yaml
+
+talosctl apply-config --insecure -n 192.168.1.13 \
+    --file ~/.talos-secrets/pi-cluster/node13.yaml
+
+talosctl apply-config --insecure -n 192.168.1.14 \
+    --file ~/.talos-secrets/pi-cluster/node14.yaml
+
+# Wait 30 seconds between each for reinitialization
 ```
 
-### 1.3 Bootstrap Cluster
+**After applying configs**: Nodes will reinitialize with their static IPs and proper configuration.
+
+### 1.4 Configure talosctl Endpoint
+
 ```bash
-# Wait 3-5 minutes for services to start
+# Point talosctl at node 11 (direct IP, not VIP yet)
+talosctl config endpoint 192.168.1.11
+talosctl config node 192.168.1.11
+```
+
+### 1.5 Wait for Services and Bootstrap Cluster
+
+```bash
+# Wait 3-5 minutes for control plane services to start
 talosctl -n 192.168.1.11 get services  # Check for etcd + kubelet
 
-# Bootstrap (ONCE ONLY)
+# Bootstrap etcd cluster (ONCE ONLY, on first control plane node)
 talosctl bootstrap --nodes 192.168.1.11
 
 # Wait 2-3 minutes for VIP to activate
