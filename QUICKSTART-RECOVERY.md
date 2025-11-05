@@ -179,13 +179,31 @@ Your cluster is now fully operational:
 
 **Total Time**: ~45 minutes (mostly automated via Flux)
 
-## Backup Checklist
+## Backup Your Secrets
 
-Keep these backed up outside the cluster:
-- `~/.talos-secrets/pi-cluster/` (all files)
+Run the backup script regularly:
+```bash
+./scripts/backup-secrets.sh
+```
+
+This backs up:
+- All Talos configs from `~/.talos-secrets/pi-cluster/`
+- Kubernetes secrets (talos-config, cloudflare-tunnel-token)
+- Creates restore instructions
+
+**Also keep backed up:**
 - GitHub PAT
-- Cloudflare tunnel token
 - This repository (git clone)
+
+**Encrypt your backup:**
+```bash
+# Recommended: Encrypt with GPG
+cd ~/cluster-backups
+tar -czf - backup-YYYYMMDD-HHMMSS | gpg -c > cluster-backup.tar.gz.gpg
+
+# Restore:
+gpg -d cluster-backup.tar.gz.gpg | tar -xzf -
+```
 
 ## Next Steps
 
