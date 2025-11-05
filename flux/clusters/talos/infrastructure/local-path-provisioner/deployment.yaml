@@ -14,6 +14,13 @@ spec:
       labels:
         app: local-path-provisioner
     spec:
+      # Schedule on talos-cp1 (node with storage)
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp1
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
       serviceAccountName: local-path-provisioner-service-account
       containers:
         - name: local-path-provisioner
