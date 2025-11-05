@@ -29,6 +29,8 @@ data:
     metadata:
       name: helper-pod
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp1
       priorityClassName: system-node-critical
       tolerations:
         - key: node.kubernetes.io/disk-pressure
