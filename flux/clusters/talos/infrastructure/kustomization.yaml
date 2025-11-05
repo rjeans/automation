@@ -5,5 +5,4 @@ resources:
   - metrics-server
   - cloudflare-tunnel
   - local-path-provisioner  # Must deploy before kube-prometheus-stack (needs storage)
-  # TODO: Re-enable after infrastructure is ready
-  # - kube-prometheus-stack
+  - kube-prometheus-stack
