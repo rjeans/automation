@@ -132,16 +132,17 @@ talosctl config node 192.168.1.11
 talosctl -n 192.168.1.11 get services  # Check for etcd + kubelet
 
 # Bootstrap etcd cluster (ONCE ONLY, on first control plane node)
+# IMPORTANT: Use --nodes with .11 IP, not VIP (VIP not active yet)
 talosctl bootstrap --nodes 192.168.1.11
 
 # Wait 2-3 minutes for VIP to activate
 ping 192.168.1.10  # VIP should respond
 
-# Switch to VIP
+# Switch to VIP (now that cluster is bootstrapped)
 talosctl config endpoint 192.168.1.10
 talosctl config nodes 192.168.1.11 192.168.1.12 192.168.1.13 192.168.1.14
 
-# Get kubeconfig
+# Get kubeconfig (will use VIP endpoint from config)
 talosctl kubeconfig --force
 
 # Verify cluster
