@@ -23,11 +23,9 @@ Complete cluster rebuild from GitOps. Everything except secrets is automatically
 
 **Option B: Reset existing cluster** (nodes currently running):
 
-**⚠️ WARNING**: On Raspberry Pi, `talosctl reset` wipes the boot partition, making nodes unbootable. You MUST reflash SD cards after reset.
+For disaster recovery from a running cluster, you have three choices:
 
-For disaster recovery from a running cluster, you have two choices:
-
-1. **Power off and reflash** (recommended):
+1. **Power off and reflash** (simplest, recommended):
    ```bash
    # Gracefully shutdown nodes
    talosctl shutdown -n 192.168.1.11,192.168.1.12,192.168.1.13,192.168.1.14
@@ -36,9 +34,33 @@ For disaster recovery from a running cluster, you have two choices:
    # Then follow Option A
    ```
 
-2. **Use reset** (requires reflashing):
+2. **Selective wipe** (preserves boot partition, fastest):
    ```bash
-   # Reset wipes boot partition - nodes won't boot after this!
+   # Wipe only STATE and EPHEMERAL partitions, keep boot partition intact
+   # Do workers first, then control plane nodes
+   talosctl reset --system-labels-to-wipe STATE --system-labels-to-wipe EPHEMERAL \
+       --graceful --reboot -n 192.168.1.14
+   sleep 60
+
+   talosctl reset --system-labels-to-wipe STATE --system-labels-to-wipe EPHEMERAL \
+       --graceful --reboot -n 192.168.1.13
+   sleep 60
+
+   talosctl reset --system-labels-to-wipe STATE --system-labels-to-wipe EPHEMERAL \
+       --graceful --reboot -n 192.168.1.12
+   sleep 60
+
+   talosctl reset --system-labels-to-wipe STATE --system-labels-to-wipe EPHEMERAL \
+       --graceful --reboot -n 192.168.1.11
+   sleep 60
+
+   # Nodes reboot into maintenance mode with boot partition preserved!
+   # Continue with step 1.2
+   ```
+
+3. **Full reset** (wipes everything including boot partition):
+   ```bash
+   # ⚠️ WARNING: Wipes boot partition - requires reflashing SD cards
    talosctl reset --graceful --reboot -n 192.168.1.14  # worker
    talosctl reset --graceful --reboot -n 192.168.1.13  # cp3
    talosctl reset --graceful --reboot -n 192.168.1.12  # cp2
@@ -48,7 +70,7 @@ For disaster recovery from a running cluster, you have two choices:
    # Then follow Option A
    ```
 
-**For disaster recovery**: Just power off, reflash SD cards, and follow Option A.
+**Recommended**: Use selective wipe (option 2) to preserve boot partition and avoid reflashing.
 
 **Important**: You must apply configs while nodes are in maintenance mode, before they become a proper cluster.
 
@@ -161,6 +183,12 @@ kubectl create secret generic talos-config \
 
 ### 3.2 Cloudflare Tunnel Secret
 ```bash
+# If you have a backup from ./scripts/backup-secrets.sh:
+kubectl create secret generic cloudflare-tunnel-token \
+    -n cloudflare-tunnel \
+    --from-literal=token=$(cat ~/cluster-backups/backup-YYYYMMDD-HHMMSS/kubernetes-secrets/cloudflare-tunnel-token.txt)
+
+# Or manually enter the token:
 kubectl create secret generic cloudflare-tunnel-token \
     -n cloudflare-tunnel \
     --from-literal=token=<your-cloudflare-token>

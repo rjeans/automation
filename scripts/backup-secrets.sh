@@ -39,8 +39,15 @@ fi
 
 # cloudflare-tunnel token secret
 if kubectl get secret -n cloudflare-tunnel cloudflare-tunnel-token &>/dev/null; then
+    # Save full YAML (for kubectl apply)
     kubectl get secret -n cloudflare-tunnel cloudflare-tunnel-token -o yaml > "${BACKUP_DIR}/kubernetes-secrets/cloudflare-tunnel-token.yaml"
-    echo "  ✅ cloudflare-tunnel/cloudflare-tunnel-token"
+
+    # Also extract decoded token value for easy reference
+    CLOUDFLARE_TOKEN=$(kubectl get secret -n cloudflare-tunnel cloudflare-tunnel-token -o jsonpath='{.data.token}' | base64 -d)
+    echo "$CLOUDFLARE_TOKEN" > "${BACKUP_DIR}/kubernetes-secrets/cloudflare-tunnel-token.txt"
+    chmod 600 "${BACKUP_DIR}/kubernetes-secrets/cloudflare-tunnel-token.txt"
+
+    echo "  ✅ cloudflare-tunnel/cloudflare-tunnel-token (YAML + decoded)"
 else
     echo "  ⚠️  cloudflare-tunnel/cloudflare-tunnel-token not found"
 fi
@@ -95,7 +102,8 @@ cat > "${BACKUP_DIR}/README.md" <<EOF
 
 ### Kubernetes Secrets
 - talos-config-secret.yaml - Talos API credentials for cluster-dashboard
-- cloudflare-tunnel-token.yaml - Cloudflare tunnel authentication
+- cloudflare-tunnel-token.yaml - Cloudflare tunnel authentication (full YAML)
+- cloudflare-tunnel-token.txt - Cloudflare tunnel token (decoded plain text)
 - monitoring-secrets.yaml - Monitoring namespace secrets (if any)
 
 ### GitHub
@@ -120,8 +128,17 @@ export GITHUB_TOKEN=\$(cat github/GITHUB_TOKEN.txt)
 ### Restore Kubernetes Secrets
 \`\`\`bash
 # After cluster is running and Flux has deployed applications:
+
+# Option 1: Apply full YAML (preserves metadata)
 kubectl apply -f kubernetes-secrets/talos-config-secret.yaml
 kubectl apply -f kubernetes-secrets/cloudflare-tunnel-token.yaml
+
+# Option 2: Recreate from decoded values (simpler)
+kubectl create secret generic talos-config -n cluster-dashboard \\
+    --from-file=\$HOME/.talos-secrets/pi-cluster/talosconfig
+
+kubectl create secret generic cloudflare-tunnel-token -n cloudflare-tunnel \\
+    --from-literal=token=\$(cat kubernetes-secrets/cloudflare-tunnel-token.txt)
 \`\`\`
 
 ## Security Notes
