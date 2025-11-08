@@ -12,7 +12,10 @@ spec:
     spec:
       hostNetwork: true
       tolerations:
-        - operator: Exists
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
       containers:
         - name: shell
           image: alpine:3.20
