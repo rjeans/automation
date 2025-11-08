@@ -4,5 +4,6 @@ resources:
   - traefik
   - metrics-server
   - cloudflare-tunnel
+  - ops-debug
   - local-path-provisioner  # Must deploy before kube-prometheus-stack (needs storage)
 #  - kube-prometheus-stack
