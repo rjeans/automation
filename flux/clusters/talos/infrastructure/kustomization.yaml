@@ -4,7 +4,7 @@ resources:
   - traefik
   - metrics-server
   - cloudflare-tunnel
-#  - longhorn  # Temporarily disabled - waiting for iSCSI tools upgrade
+  - longhorn  
 #  - ops-debug
 #  - local-path-provisioner  # Replaced by Longhorn
 #  - kube-prometheus-stack

@@ -92,125 +92,42 @@ echo ""
 # Get the script directory to reference patch files
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Create static IP + VIP patch for node 11
-cat > /tmp/node11-network.yaml <<EOF
-machine:
-  network:
-    hostname: talos-cp1
-    interfaces:
-      - interface: end0
-        addresses:
-          - ${NODE11_IP}/${NETMASK}
-        routes:
-          - network: 0.0.0.0/0
-            gateway: ${GATEWAY}
-        vip:
-          ip: ${VIP}
-EOF
+# Source shared library for config generation
+source "$SCRIPT_DIR/lib/config-generator.sh"
 
-echo "Creating config for node 11 (${NODE11_IP} with Longhorn storage)..."
-talosctl machineconfig patch \
-    "$CONFIG_DIR/controlplane.yaml" \
-    --patch @/tmp/node11-network.yaml \
-    --patch @"$SCRIPT_DIR/patches/node-11-storage.yaml" \
-    --output "$CONFIG_DIR/node11.yaml"
+# Generate control plane configs (with network, VIP, and storage)
+generate_controlplane_config "1" "$NODE11_IP" "$GATEWAY" "$NETMASK" "$VIP" \
+    "$CONFIG_DIR/controlplane.yaml" "$CONFIG_DIR/node11.yaml" "$SCRIPT_DIR"
 
-if [ $? -eq 0 ]; then
-    echo "✓ Created: $CONFIG_DIR/node11.yaml"
-else
+if [ $? -ne 0 ]; then
     echo "✗ Failed to create node 11 config"
     exit 1
 fi
 
-# Create static IP + VIP patch for node 12
-cat > /tmp/node12-network.yaml <<EOF
-machine:
-  network:
-    hostname: talos-cp2
-    interfaces:
-      - interface: end0
-        addresses:
-          - ${NODE12_IP}/${NETMASK}
-        routes:
-          - network: 0.0.0.0/0
-            gateway: ${GATEWAY}
-        vip:
-          ip: ${VIP}
-EOF
+generate_controlplane_config "2" "$NODE12_IP" "$GATEWAY" "$NETMASK" "$VIP" \
+    "$CONFIG_DIR/controlplane.yaml" "$CONFIG_DIR/node12.yaml" "$SCRIPT_DIR"
 
-echo "Creating config for node 12 (${NODE12_IP} with Longhorn storage)..."
-talosctl machineconfig patch \
-    "$CONFIG_DIR/controlplane.yaml" \
-    --patch @/tmp/node12-network.yaml \
-    --patch @"$SCRIPT_DIR/patches/node-12-storage.yaml" \
-    --output "$CONFIG_DIR/node12.yaml"
-
-if [ $? -eq 0 ]; then
-    echo "✓ Created: $CONFIG_DIR/node12.yaml"
-else
+if [ $? -ne 0 ]; then
     echo "✗ Failed to create node 12 config"
     exit 1
 fi
 
-# Create static IP + VIP patch for node 13
-cat > /tmp/node13-network.yaml <<EOF
-machine:
-  network:
-    hostname: talos-cp3
-    interfaces:
-      - interface: end0
-        addresses:
-          - ${NODE13_IP}/${NETMASK}
-        routes:
-          - network: 0.0.0.0/0
-            gateway: ${GATEWAY}
-        vip:
-          ip: ${VIP}
-EOF
+generate_controlplane_config "3" "$NODE13_IP" "$GATEWAY" "$NETMASK" "$VIP" \
+    "$CONFIG_DIR/controlplane.yaml" "$CONFIG_DIR/node13.yaml" "$SCRIPT_DIR"
 
-echo "Creating config for node 13 (${NODE13_IP} with Longhorn storage)..."
-talosctl machineconfig patch \
-    "$CONFIG_DIR/controlplane.yaml" \
-    --patch @/tmp/node13-network.yaml \
-    --patch @"$SCRIPT_DIR/patches/node-13-storage.yaml" \
-    --output "$CONFIG_DIR/node13.yaml"
-
-if [ $? -eq 0 ]; then
-    echo "✓ Created: $CONFIG_DIR/node13.yaml"
-else
+if [ $? -ne 0 ]; then
     echo "✗ Failed to create node 13 config"
     exit 1
 fi
 
-# Create static IP patch for worker (no VIP, no storage)
-cat > /tmp/node14-network.yaml <<EOF
-machine:
-  network:
-    hostname: talos-worker1
-    interfaces:
-      - interface: end0
-        addresses:
-          - ${NODE14_IP}/${NETMASK}
-        routes:
-          - network: 0.0.0.0/0
-            gateway: ${GATEWAY}
-EOF
+# Generate worker config (network only, no VIP, no storage)
+generate_worker_config "1" "$NODE14_IP" "$GATEWAY" "$NETMASK" \
+    "$CONFIG_DIR/worker.yaml" "$CONFIG_DIR/node14.yaml"
 
-echo "Creating config for node 14 (${NODE14_IP} - worker)..."
-talosctl machineconfig patch \
-    "$CONFIG_DIR/worker.yaml" \
-    --patch @/tmp/node14-network.yaml \
-    --output "$CONFIG_DIR/node14.yaml"
-
-if [ $? -eq 0 ]; then
-    echo "✓ Created: $CONFIG_DIR/node14.yaml"
-else
+if [ $? -ne 0 ]; then
     echo "✗ Failed to create node 14 config"
     exit 1
 fi
-
-# Clean up temp files
-rm -f /tmp/node11-network.yaml /tmp/node12-network.yaml /tmp/node13-network.yaml /tmp/node14-network.yaml
 
 echo ""
 echo "✓ Phase 3 Complete"
@@ -224,6 +141,8 @@ echo "  $CONFIG_DIR/node11.yaml - Control Plane 1 ($NODE11_IP with 1TB Longhorn 
 echo "  $CONFIG_DIR/node12.yaml - Control Plane 2 ($NODE12_IP with 1TB Longhorn storage)"
 echo "  $CONFIG_DIR/node13.yaml - Control Plane 3 ($NODE13_IP with 256GB Longhorn storage)"
 echo "  $CONFIG_DIR/node14.yaml - Worker ($NODE14_IP - no storage)"
+echo ""
+echo "Note: iSCSI tools extension is included in the factory schematic (not a runtime patch)"
 echo ""
 echo "Base configs (preserved):"
 echo "  $CONFIG_DIR/controlplane.yaml"

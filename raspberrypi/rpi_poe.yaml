@@ -21,3 +21,4 @@ customization:
   systemExtensions:
     officialExtensions:
       - siderolabs/vc4
+      - siderolabs/iscsi-tools

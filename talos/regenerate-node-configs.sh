@@ -9,6 +9,9 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 CONFIG_DIR="$HOME/.talos-secrets/pi-cluster"
 
+# Source shared library for config generation
+source "$SCRIPT_DIR/lib/config-generator.sh"
+
 # Node definitions
 NODE11_IP="192.168.1.11"
 NODE12_IP="192.168.1.12"
@@ -78,128 +81,39 @@ done
 echo "✓ Backups saved to: $BACKUP_DIR"
 echo ""
 
-# Create temporary network-only patches (no storage, no kubelet mounts)
-# Storage will be added via separate patch files
+# Generate control plane configs using shared library
+generate_controlplane_config "1" "$NODE11_IP" "$GATEWAY" "$NETMASK" "$VIP" \
+    "$CONFIG_DIR/controlplane.yaml" "$CONFIG_DIR/node11.yaml" "$SCRIPT_DIR"
 
-# Node 11: Control plane + VIP + storage
-cat > /tmp/node11-network.yaml <<EOF
-machine:
-  network:
-    hostname: talos-cp1
-    interfaces:
-      - interface: end0
-        addresses:
-          - ${NODE11_IP}/${NETMASK}
-        routes:
-          - network: 0.0.0.0/0
-            gateway: ${GATEWAY}
-        vip:
-          ip: ${VIP}
-EOF
-
-echo "Generating node11.yaml (Control Plane 1 with Longhorn storage)..."
-talosctl machineconfig patch \
-    "$CONFIG_DIR/controlplane.yaml" \
-    --patch @/tmp/node11-network.yaml \
-    --patch @"$SCRIPT_DIR/patches/node-11-storage.yaml" \
-    --output "$CONFIG_DIR/node11.yaml"
-
-if [ $? -eq 0 ]; then
-    echo "✓ Created: $CONFIG_DIR/node11.yaml"
-else
+if [ $? -ne 0 ]; then
     echo "✗ Failed to create node11.yaml"
     exit 1
 fi
 
-# Node 12: Control plane + VIP + storage
-cat > /tmp/node12-network.yaml <<EOF
-machine:
-  network:
-    hostname: talos-cp2
-    interfaces:
-      - interface: end0
-        addresses:
-          - ${NODE12_IP}/${NETMASK}
-        routes:
-          - network: 0.0.0.0/0
-            gateway: ${GATEWAY}
-        vip:
-          ip: ${VIP}
-EOF
+generate_controlplane_config "2" "$NODE12_IP" "$GATEWAY" "$NETMASK" "$VIP" \
+    "$CONFIG_DIR/controlplane.yaml" "$CONFIG_DIR/node12.yaml" "$SCRIPT_DIR"
 
-echo "Generating node12.yaml (Control Plane 2 with Longhorn storage)..."
-talosctl machineconfig patch \
-    "$CONFIG_DIR/controlplane.yaml" \
-    --patch @/tmp/node12-network.yaml \
-    --patch @"$SCRIPT_DIR/patches/node-12-storage.yaml" \
-    --output "$CONFIG_DIR/node12.yaml"
-
-if [ $? -eq 0 ]; then
-    echo "✓ Created: $CONFIG_DIR/node12.yaml"
-else
+if [ $? -ne 0 ]; then
     echo "✗ Failed to create node12.yaml"
     exit 1
 fi
 
-# Node 13: Control plane + VIP + storage
-cat > /tmp/node13-network.yaml <<EOF
-machine:
-  network:
-    hostname: talos-cp3
-    interfaces:
-      - interface: end0
-        addresses:
-          - ${NODE13_IP}/${NETMASK}
-        routes:
-          - network: 0.0.0.0/0
-            gateway: ${GATEWAY}
-        vip:
-          ip: ${VIP}
-EOF
+generate_controlplane_config "3" "$NODE13_IP" "$GATEWAY" "$NETMASK" "$VIP" \
+    "$CONFIG_DIR/controlplane.yaml" "$CONFIG_DIR/node13.yaml" "$SCRIPT_DIR"
 
-echo "Generating node13.yaml (Control Plane 3 with Longhorn storage)..."
-talosctl machineconfig patch \
-    "$CONFIG_DIR/controlplane.yaml" \
-    --patch @/tmp/node13-network.yaml \
-    --patch @"$SCRIPT_DIR/patches/node-13-storage.yaml" \
-    --output "$CONFIG_DIR/node13.yaml"
-
-if [ $? -eq 0 ]; then
-    echo "✓ Created: $CONFIG_DIR/node13.yaml"
-else
+if [ $? -ne 0 ]; then
     echo "✗ Failed to create node13.yaml"
     exit 1
 fi
 
-# Node 14: Worker + no VIP + no storage
-cat > /tmp/node14-network.yaml <<EOF
-machine:
-  network:
-    hostname: talos-worker1
-    interfaces:
-      - interface: end0
-        addresses:
-          - ${NODE14_IP}/${NETMASK}
-        routes:
-          - network: 0.0.0.0/0
-            gateway: ${GATEWAY}
-EOF
+# Generate worker config using shared library
+generate_worker_config "1" "$NODE14_IP" "$GATEWAY" "$NETMASK" \
+    "$CONFIG_DIR/worker.yaml" "$CONFIG_DIR/node14.yaml"
 
-echo "Generating node14.yaml (Worker - no storage)..."
-talosctl machineconfig patch \
-    "$CONFIG_DIR/worker.yaml" \
-    --patch @/tmp/node14-network.yaml \
-    --output "$CONFIG_DIR/node14.yaml"
-
-if [ $? -eq 0 ]; then
-    echo "✓ Created: $CONFIG_DIR/node14.yaml"
-else
+if [ $? -ne 0 ]; then
     echo "✗ Failed to create node14.yaml"
     exit 1
 fi
-
-# Clean up temp files
-rm -f /tmp/node11-network.yaml /tmp/node12-network.yaml /tmp/node13-network.yaml /tmp/node14-network.yaml
 
 echo ""
 echo "✓ Node Config Regeneration Complete!"
