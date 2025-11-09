@@ -60,6 +60,10 @@ spec:
           cpu: 200m
           memory: 256Mi
 
+    # Talos-specific: kubelet root directory
+    csi:
+      kubeletRootDir: /var/lib/kubelet
+
     longhornUI:
       replicas: 1
       resources:
