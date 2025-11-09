@@ -1,5 +1,5 @@
-# External storage mount for node .11
-# Device: 1TB JMicron SSD (stable ID for reliable detection)
+# External storage mount for node .13
+# Device: 256GB JMicron SSD (stable ID for reliable detection)
 # This disk will be used by Longhorn for distributed storage
 machine:
   disks:

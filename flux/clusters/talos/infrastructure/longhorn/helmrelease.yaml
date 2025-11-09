@@ -1,0 +1,87 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: longhorn
+      version: '1.7.x'
+      sourceRef:
+        kind: HelmRepository
+        name: longhorn
+        namespace: longhorn-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # Use our mounted storage path
+    defaultSettings:
+      defaultDataPath: /var/mnt/longhorn
+      defaultReplicaCount: 3
+      storageMinimalAvailablePercentage: 10
+      backupTarget: ""
+      backupTargetCredentialSecret: ""
+      createDefaultDiskLabeledNodes: true
+      defaultDataLocality: best-effort
+      replicaSoftAntiAffinity: true
+      storageOverProvisioningPercentage: 200
+      upgradeChecker: false
+
+    # Resource limits for Raspberry Pi
+    longhornManager:
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+    longhornDriver:
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+
+    longhornUI:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+
+    # Enable metrics for monitoring
+    metrics:
+      serviceMonitor:
+        enabled: false
+
+    # Persistence settings
+    persistence:
+      defaultClass: false
+      defaultFsType: ext4
+      defaultClassReplicaCount: 3
+      defaultDataLocality: best-effort
+
+    # Ingress disabled (can enable later with Traefik)
+    ingress:
+      enabled: false

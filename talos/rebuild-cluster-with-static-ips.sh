@@ -89,8 +89,11 @@ echo "Phase 3: Create Node-Specific Configs"
 echo "========================================="
 echo ""
 
+# Get the script directory to reference patch files
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Create static IP + VIP patch for node 11
-cat > /tmp/node11-patch.yaml <<EOF
+cat > /tmp/node11-network.yaml <<EOF
 machine:
   network:
     hostname: talos-cp1
@@ -103,26 +106,13 @@ machine:
             gateway: ${GATEWAY}
         vip:
           ip: ${VIP}
-  kubelet:
-    extraMounts:
-      - destination: /var/lib/rancher/local-path-provisioner
-        type: bind
-        source: /var/lib/rancher/local-path-provisioner
-        options:
-          - bind
-          - rshared
-          - rw
-  disks:
-    - device: /dev/sdb
-      partitions:
-        - size: 0
-          mountpoint: /var/mnt/storage
 EOF
 
-echo "Creating config for node 11 (${NODE11_IP} with storage)..."
+echo "Creating config for node 11 (${NODE11_IP} with Longhorn storage)..."
 talosctl machineconfig patch \
     "$CONFIG_DIR/controlplane.yaml" \
-    --patch @/tmp/node11-patch.yaml \
+    --patch @/tmp/node11-network.yaml \
+    --patch @"$SCRIPT_DIR/patches/node-11-storage.yaml" \
     --output "$CONFIG_DIR/node11.yaml"
 
 if [ $? -eq 0 ]; then
@@ -133,7 +123,7 @@ else
 fi
 
 # Create static IP + VIP patch for node 12
-cat > /tmp/node12-patch.yaml <<EOF
+cat > /tmp/node12-network.yaml <<EOF
 machine:
   network:
     hostname: talos-cp2
@@ -146,21 +136,13 @@ machine:
             gateway: ${GATEWAY}
         vip:
           ip: ${VIP}
-  kubelet:
-    extraMounts:
-      - destination: /var/lib/rancher/local-path-provisioner
-        type: bind
-        source: /var/lib/rancher/local-path-provisioner
-        options:
-          - bind
-          - rshared
-          - rw
 EOF
 
-echo "Creating config for node 12 (${NODE12_IP})..."
+echo "Creating config for node 12 (${NODE12_IP} with Longhorn storage)..."
 talosctl machineconfig patch \
     "$CONFIG_DIR/controlplane.yaml" \
-    --patch @/tmp/node12-patch.yaml \
+    --patch @/tmp/node12-network.yaml \
+    --patch @"$SCRIPT_DIR/patches/node-12-storage.yaml" \
     --output "$CONFIG_DIR/node12.yaml"
 
 if [ $? -eq 0 ]; then
@@ -171,7 +153,7 @@ else
 fi
 
 # Create static IP + VIP patch for node 13
-cat > /tmp/node13-patch.yaml <<EOF
+cat > /tmp/node13-network.yaml <<EOF
 machine:
   network:
     hostname: talos-cp3
@@ -184,21 +166,13 @@ machine:
             gateway: ${GATEWAY}
         vip:
           ip: ${VIP}
-  kubelet:
-    extraMounts:
-      - destination: /var/lib/rancher/local-path-provisioner
-        type: bind
-        source: /var/lib/rancher/local-path-provisioner
-        options:
-          - bind
-          - rshared
-          - rw
 EOF
 
-echo "Creating config for node 13 (${NODE13_IP})..."
+echo "Creating config for node 13 (${NODE13_IP} with Longhorn storage)..."
 talosctl machineconfig patch \
     "$CONFIG_DIR/controlplane.yaml" \
-    --patch @/tmp/node13-patch.yaml \
+    --patch @/tmp/node13-network.yaml \
+    --patch @"$SCRIPT_DIR/patches/node-13-storage.yaml" \
     --output "$CONFIG_DIR/node13.yaml"
 
 if [ $? -eq 0 ]; then
@@ -208,8 +182,8 @@ else
     exit 1
 fi
 
-# Create static IP patch for worker (no VIP)
-cat > /tmp/node14-patch.yaml <<EOF
+# Create static IP patch for worker (no VIP, no storage)
+cat > /tmp/node14-network.yaml <<EOF
 machine:
   network:
     hostname: talos-worker1
@@ -220,21 +194,12 @@ machine:
         routes:
           - network: 0.0.0.0/0
             gateway: ${GATEWAY}
-  kubelet:
-    extraMounts:
-      - destination: /var/lib/rancher/local-path-provisioner
-        type: bind
-        source: /var/lib/rancher/local-path-provisioner
-        options:
-          - bind
-          - rshared
-          - rw
 EOF
 
 echo "Creating config for node 14 (${NODE14_IP} - worker)..."
 talosctl machineconfig patch \
     "$CONFIG_DIR/worker.yaml" \
-    --patch @/tmp/node14-patch.yaml \
+    --patch @/tmp/node14-network.yaml \
     --output "$CONFIG_DIR/node14.yaml"
 
 if [ $? -eq 0 ]; then
@@ -245,7 +210,7 @@ else
 fi
 
 # Clean up temp files
-rm -f /tmp/node11-patch.yaml /tmp/node12-patch.yaml /tmp/node13-patch.yaml /tmp/node14-patch.yaml
+rm -f /tmp/node11-network.yaml /tmp/node12-network.yaml /tmp/node13-network.yaml /tmp/node14-network.yaml
 
 echo ""
 echo "✓ Phase 3 Complete"
@@ -254,11 +219,11 @@ echo "========================================="
 echo "Generated Configuration Files"
 echo "========================================="
 echo ""
-echo "Node-specific configs (with static IPs + VIP):"
-echo "  $CONFIG_DIR/node11.yaml - Control Plane 1 ($NODE11_IP with storage)"
-echo "  $CONFIG_DIR/node12.yaml - Control Plane 2 ($NODE12_IP)"
-echo "  $CONFIG_DIR/node13.yaml - Control Plane 3 ($NODE13_IP)"
-echo "  $CONFIG_DIR/node14.yaml - Worker ($NODE14_IP)"
+echo "Node-specific configs (with static IPs + VIP + Longhorn storage):"
+echo "  $CONFIG_DIR/node11.yaml - Control Plane 1 ($NODE11_IP with 1TB Longhorn storage)"
+echo "  $CONFIG_DIR/node12.yaml - Control Plane 2 ($NODE12_IP with 1TB Longhorn storage)"
+echo "  $CONFIG_DIR/node13.yaml - Control Plane 3 ($NODE13_IP with 256GB Longhorn storage)"
+echo "  $CONFIG_DIR/node14.yaml - Worker ($NODE14_IP - no storage)"
 echo ""
 echo "Base configs (preserved):"
 echo "  $CONFIG_DIR/controlplane.yaml"

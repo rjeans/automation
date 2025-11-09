@@ -1,0 +1,9 @@
+# External storage mount for node .12
+# Device: 1TB WDC SSD (stable ID for reliable detection)
+# This disk will be used by Longhorn for distributed storage
+machine:
+  disks:
+    - device: /dev/disk/by-id/usb-WDC_WDS1_00T2B0C-00PX_DD564198838A6-0:0
+      partitions:
+        - size: 0
+          mountpoint: /var/mnt/longhorn
