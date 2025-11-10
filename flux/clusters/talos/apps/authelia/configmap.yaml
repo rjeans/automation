@@ -52,8 +52,9 @@ data:
         #   policy: two_factor
 
     session:
-      domains:
+      cookies:
         - domain: jeansy.org
+          authelia_url: https://auth.jeansy.org
           expiration: 1h
           inactivity: 5m
           remember_me: 1M
