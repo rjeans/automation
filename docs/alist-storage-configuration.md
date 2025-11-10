@@ -37,10 +37,12 @@ Add two S3 storage backends:
 - **Access Key ID**: Use value from `$MINIO_ACCESS_KEY` env var
 - **Secret Access Key**: Use value from `$MINIO_SECRET_KEY` env var
 - **Root Folder Path**: `/`
-- **Custom Host**: `https://s3.jeans-host.net/rag-documents` (IMPORTANT: For external S3 API access)
+- **Custom Host**: `https://s3.jeans-host.net` (IMPORTANT: Do NOT include bucket name)
 - **Force Path Style**: ✓ (enabled)
 - **List Object Version**: `v1`
 - **Sign URL Expire**: `4` hours
+- **Placeholder**: (leave empty)
+- **Enable Sign URL Expire**: ✓ (enabled) - This generates presigned URLs
 
 #### 2. Photos Storage
 
@@ -52,10 +54,12 @@ Add two S3 storage backends:
 - **Access Key ID**: Use value from `$MINIO_ACCESS_KEY` env var
 - **Secret Access Key**: Use value from `$MINIO_SECRET_KEY` env var
 - **Root Folder Path**: `/`
-- **Custom Host**: `https://s3.jeans-host.net/rag-photos` (IMPORTANT: For external S3 API access)
+- **Custom Host**: `https://s3.jeans-host.net` (IMPORTANT: Do NOT include bucket name)
 - **Force Path Style**: ✓ (enabled)
 - **List Object Version**: `v1`
 - **Sign URL Expire**: `4` hours
+- **Placeholder**: (leave empty)
+- **Enable Sign URL Expire**: ✓ (enabled) - This generates presigned URLs
 
 ## Getting Credentials
 
