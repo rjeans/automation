@@ -71,6 +71,13 @@ spec:
         versioning: true
         objectlocking: false
 
+    # Admin user account
+    users:
+      - accessKey: rich
+        existingSecret: minio-user-rich
+        existingSecretKey: password
+        policy: consoleAdmin
+
     # Security context for Pi
     securityContext:
       enabled: true

@@ -4,5 +4,6 @@ namespace: rag-system
 resources:
   - helmrepository.yaml
   - secret.yaml
+  - user-rich-secret.yaml
   - helmrelease.yaml
   - ingressroute.yaml
