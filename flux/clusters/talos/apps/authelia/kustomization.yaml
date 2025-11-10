@@ -8,4 +8,5 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - middleware.yaml
+  - headers-middleware.yaml
   - ingressroute.yaml

@@ -10,6 +10,8 @@ spec:
     - match: Host(`minio.jeans-host.net`)
       kind: Rule
       middlewares:
+        - name: secure-headers
+          namespace: authelia
         - name: authelia
           namespace: authelia
       services:
