@@ -6,3 +6,4 @@ resources:
   - helmrelease.yaml
   - storageclass-ha.yaml
   - storageclass-standard.yaml
+  - node-labeler.yaml

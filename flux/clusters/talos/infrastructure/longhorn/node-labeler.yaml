@@ -1,0 +1,53 @@
+# Job to label all nodes for Longhorn default disk creation
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: longhorn-node-labeler
+  namespace: longhorn-system
+spec:
+  ttlSecondsAfterFinished: 300  # Clean up after 5 minutes
+  template:
+    spec:
+      serviceAccountName: longhorn-node-labeler
+      restartPolicy: OnFailure
+      containers:
+      - name: kubectl
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/bash
+        - -c
+        - |
+          echo "Labeling nodes for Longhorn default disk creation..."
+          for node in $(kubectl get nodes -o name); do
+            echo "Labeling $node..."
+            kubectl label $node node.longhorn.io/create-default-disk=true --overwrite
+          done
+          echo "All nodes labeled successfully!"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: longhorn-node-labeler
+  namespace: longhorn-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: longhorn-node-labeler
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: longhorn-node-labeler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: longhorn-node-labeler
+subjects:
+- kind: ServiceAccount
+  name: longhorn-node-labeler
+  namespace: longhorn-system
