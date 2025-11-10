@@ -1,0 +1,23 @@
+# PostgreSQL RAG Cluster - Depends on CloudNativePG operator
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: postgres-rag-cluster
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 1m
+  timeout: 5m
+  dependsOn:
+    - name: cloudnative-pg-operator
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./flux/clusters/talos/apps/rag-system/postgresql/cluster
+  prune: true
+  wait: true
+  # SOPS decryption configuration
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age

@@ -1,0 +1,27 @@
+# CloudNativePG Operator - Must be installed before PostgreSQL clusters
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cloudnative-pg-operator
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./flux/clusters/talos/apps/rag-system/postgresql/operator
+  prune: true
+  wait: true
+  # SOPS decryption configuration
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  # Wait for operator CRDs to be ready
+  healthChecks:
+    - apiVersion: apiextensions.k8s.io/v1
+      kind: CustomResourceDefinition
+      name: clusters.postgresql.cnpg.io
+      namespace: ""
