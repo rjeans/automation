@@ -10,6 +10,9 @@ data:
 
     server:
       address: 'tcp://0.0.0.0:9091'
+      trusted_proxies:
+        - '10.244.0.0/16'  # Pod network CIDR
+        - '10.96.0.0/12'   # Service network CIDR
 
     log:
       level: info
