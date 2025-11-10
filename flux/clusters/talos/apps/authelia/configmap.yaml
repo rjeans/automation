@@ -52,11 +52,11 @@ data:
         #   policy: two_factor
 
     session:
-      secret: will_be_overridden_by_env
-      domain: jeansy.org
-      expiration: 1h
-      inactivity: 5m
-      remember_me: 1M
+      domains:
+        - domain: jeansy.org
+          expiration: 1h
+          inactivity: 5m
+          remember_me: 1M
 
     regulation:
       max_retries: 3
