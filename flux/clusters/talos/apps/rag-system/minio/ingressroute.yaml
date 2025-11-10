@@ -5,7 +5,7 @@ metadata:
   namespace: rag-system
 spec:
   entryPoints:
-    - websecure
+    - web
   routes:
     - match: Host(`minio.jeans-host.net`)
       kind: Rule
@@ -15,5 +15,3 @@ spec:
       services:
         - name: minio-console
           port: 9001
-  tls:
-    certResolver: cloudflare

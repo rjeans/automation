@@ -5,12 +5,10 @@ metadata:
   namespace: authelia
 spec:
   entryPoints:
-    - websecure
+    - web
   routes:
     - match: Host(`auth.jeans-host.net`)
       kind: Rule
       services:
         - name: authelia
           port: 80
-  tls:
-    certResolver: cloudflare
