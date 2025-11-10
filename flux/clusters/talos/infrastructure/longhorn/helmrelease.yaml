@@ -34,6 +34,7 @@ spec:
       replicaSoftAntiAffinity: true
       storageOverProvisioningPercentage: 200
       upgradeChecker: false
+      taintToleration: "node-role.kubernetes.io/control-plane:NoSchedule"
 
     # Engine image toleration for control plane nodes
     defaultEngineImage:
