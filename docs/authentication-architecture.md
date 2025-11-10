@@ -2,7 +2,7 @@
 
 ## Overview
 
-This cluster uses a layered authentication approach combining Cloudflare OAuth and Authelia SSO.
+This cluster uses Cloudflare OAuth for all external access authentication. The architecture prioritizes simplicity with authentication handled at the tunnel entry point.
 
 ## Architecture Layers
 
@@ -17,19 +17,13 @@ This cluster uses a layered authentication approach combining Cloudflare OAuth a
 │                   - TLS Termination                          │
 │                   - OAuth Authentication                     │
 │                   - User Management                          │
+│                   - Access Control                           │
 └─────────────────────────────────────────────────────────────┘
-                            ↓ HTTP
+                            ↓ HTTP (authenticated)
 ┌─────────────────────────────────────────────────────────────┐
 │                   Traefik Ingress                            │
 │                   - Routing (web:80)                         │
-│                   - Middleware Chain                         │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   Authelia SSO                               │
-│                   - Internal Service Auth                    │
-│                   - Two-Factor (TOTP)                        │
-│                   - ForwardAuth for Apps                     │
+│                   - Service Discovery                        │
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -40,93 +34,101 @@ This cluster uses a layered authentication approach combining Cloudflare OAuth a
 
 ## Component Responsibilities
 
-### Cloudflare OAuth (External)
-- **Purpose**: External access control and user management
-- **Manages**: User accounts, email verification, OAuth flows
-- **Protects**: Tunnel entry point
+### Cloudflare Tunnel with OAuth
+- **Purpose**: Single point of authentication for all external access
+- **Manages**:
+  - User accounts and authentication
+  - Email verification
+  - OAuth flows
+  - Access policies per service/route
+- **Protects**: All external traffic before it enters the cluster
 - **Benefits**:
   - Enterprise-grade authentication
   - No password management in cluster
   - Built-in DDoS protection
   - Global CDN performance
+  - Simple architecture (no additional auth layers)
+  - Centralized user management in Cloudflare dashboard
 
-### Authelia (Internal)
-- **Purpose**: Internal SSO and service authentication
-- **Manages**: Service access policies, MFA, session management
-- **Protects**: Individual services within cluster
+### Traefik Ingress
+- **Purpose**: Internal routing and service discovery
+- **Manages**: HTTP routing based on hostnames
 - **Benefits**:
-  - Works without internet (local auth)
-  - Fine-grained access control
-  - OAuth/OIDC provider for apps
-  - ForwardAuth integration
+  - Simple configuration (no auth middlewares needed)
+  - Fast routing (no additional auth checks)
+  - Works with authenticated traffic from Cloudflare
 
-## Access Patterns
+## Access Flow
 
 ### External User Access
-1. User → Cloudflare Tunnel (OAuth check)
-2. Tunnel → Traefik (routes to service)
-3. Traefik → Authelia middleware (2FA check)
-4. Authelia → Backend service
+1. User requests service (e.g., `https://minio.jeans-host.net`)
+2. Cloudflare Tunnel OAuth check
+   - If not authenticated: OAuth login flow
+   - If authenticated: Check access policy for this route
+3. Tunnel forwards authenticated request to cluster (HTTP)
+4. Traefik routes to appropriate service based on hostname
+5. Service receives request (already authenticated by Cloudflare)
 
-### Internal Service-to-Service
-1. Service A → Authelia (validate token)
-2. Authelia → Service B (authorized request)
+### Service Configuration
+Services only need a simple IngressRoute, no auth middlewares:
+
+```yaml
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: myapp
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`myapp.jeans-host.net`)
+      kind: Rule
+      services:
+        - name: myapp
+          port: 80
+```
 
 ## Protected Services
 
 ### MinIO Console
-- **URL**: `minio.jeans-host.net`
-- **Protection**: Cloudflare OAuth → Authelia 2FA
-- **Access**: Admins group only
-- **Middlewares**: `secure-headers`, `authelia`
+- **URL**: `https://minio.jeans-host.net`
+- **Protection**: Cloudflare OAuth
+- **Access Control**: Configured in Cloudflare Tunnel dashboard
 
-### n8n Workflow Automation
-- **Integration**: Will use Authelia OAuth/OIDC
-- **Benefits**: Single sign-on for workflow creators
+### n8n Workflow Automation (Future)
+- **URL**: `https://n8n.jeans-host.net`
+- **Protection**: Cloudflare OAuth
+- **Access Control**: Per-route policies in Cloudflare
 
-### Future RAG APIs
-- **Integration**: Authelia OAuth tokens
-- **Use Case**: API authentication for LLM services
+### Cluster Dashboard
+- **URL**: `https://dashboard.jeansy.org`
+- **Protection**: Cloudflare OAuth
+- **Access Control**: Admin-only via Cloudflare policies
 
 ## User Management
 
-### Password Changes
-Due to the proxy chain complexity, passwords are managed via the `users.yaml` file:
+All user management is handled in the **Cloudflare Zero Trust Dashboard**:
 
-```bash
-# Generate new password hash
-kubectl exec -n authelia deploy/authelia -- \
-  authelia crypto hash generate argon2 --password 'newpassword'
+1. Navigate to: Access → Service Auth → Configure
+2. Add/remove users by email
+3. Set access policies per application/route
+4. Configure session duration and MFA requirements
 
-# Update users.yaml with new hash
-# Commit and push to trigger Flux reconciliation
+### Access Policies in Cloudflare
+
+Example policy for MinIO (configured in Cloudflare dashboard):
+
+```
+Application: MinIO Console
+Domain: minio.jeans-host.net
+Policy:
+  - Include: Emails matching: admin@example.com
+  - Require: One-time PIN (optional MFA)
 ```
 
-### User Configuration
-Location: `flux/clusters/talos/apps/authelia/users.yaml` (SOPS encrypted)
+## Adding New Services
 
-```yaml
-users:
-  admin:
-    password: "$argon2id$v=19$m=65536,t=3,p=4$..."
-    displayname: "Admin User"
-    email: admin@jeansy.org
-    groups:
-      - admins
-```
-
-## Access Control Rules
-
-### MinIO Console
-```yaml
-domain: "minio.jeans-host.net"
-policy: two_factor
-subject: "group:admins"
-```
-
-### Adding New Services
-
-1. **Create IngressRoute with Authelia middleware:**
+1. **Create Kubernetes IngressRoute:**
 ```yaml
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -138,88 +140,73 @@ spec:
     - web
   routes:
     - match: Host(`myapp.jeans-host.net`)
-      middlewares:
-        - name: secure-headers
-          namespace: authelia
-        - name: authelia
-          namespace: authelia
+      kind: Rule
       services:
         - name: myapp
           port: 80
 ```
 
-2. **Add Authelia access rule:**
-```yaml
-# In authelia/configmap.yaml
-access_control:
-  rules:
-    - domain: "myapp.jeans-host.net"
-      policy: two_factor  # or one_factor
-      subject:
-        - "group:admins"  # or specific users
-```
+2. **Add route in Cloudflare Tunnel:**
+   - Go to Cloudflare Zero Trust → Networks → Tunnels
+   - Select your tunnel
+   - Add public hostname: `myapp.jeans-host.net`
+   - Point to: `http://traefik.kube-system:80`
 
-3. **Add Cloudflare Tunnel route** (via dashboard)
-
-## Session Configuration
-
-- **Expiration**: 1 hour
-- **Inactivity timeout**: 5 minutes
-- **Remember me**: 1 month
-- **Domain**: `jeans-host.net`
-
-## MFA Setup
-
-### TOTP Configuration
-- **Issuer**: jeans-host.net
-- **Algorithm**: SHA1
-- **Digits**: 6
-- **Period**: 30 seconds
-
-### Verification Codes
-Authelia uses filesystem notifier (no email setup needed):
-
-```bash
-# Retrieve one-time code for MFA setup
-kubectl exec -n authelia deploy/authelia -- cat /config/notifications.txt
-```
+3. **Configure access policy in Cloudflare:**
+   - Access → Applications → Add application
+   - Set domain: `myapp.jeans-host.net`
+   - Define who can access (emails, groups, etc.)
 
 ## Security Considerations
 
-1. **Defense in Depth**: Multiple auth layers prevent single point of failure
-2. **Cloudflare Protection**: Handles external threats before reaching cluster
-3. **Internal Segmentation**: Authelia controls service-to-service access
-4. **MFA Required**: All admin access requires two-factor authentication
-5. **Session Security**: Short timeouts and inactivity detection
+1. **Single Auth Point**: Cloudflare OAuth provides centralized authentication
+2. **DDoS Protection**: Cloudflare edge network filters attacks before reaching cluster
+3. **Zero Trust Model**: Every request authenticated at tunnel entry
+4. **Optional MFA**: Configure in Cloudflare for additional security
+5. **Session Management**: Controlled via Cloudflare Zero Trust policies
+6. **TLS Termination**: All traffic encrypted until Cloudflare edge
 
 ## Troubleshooting
 
-### Authelia Logs
+### Check Cloudflare Tunnel Status
 ```bash
-kubectl logs -n authelia -l app.kubernetes.io/name=authelia
+kubectl logs -n cloudflare-tunnel -l app=cloudflared
 ```
 
-### Check Session Issues
+### Verify Traefik Routing
 ```bash
-# View SQLite database
-kubectl exec -n authelia deploy/authelia -- sqlite3 /config/db.sqlite3 "SELECT * FROM user_sessions;"
+# Check IngressRoutes
+kubectl get ingressroute -A
+
+# View Traefik logs
+kubectl logs -n kube-system -l app.kubernetes.io/name=traefik
 ```
 
 ### Test Access Flow
-1. Access service URL: `https://myapp.jeans-host.net`
+1. Access service URL: `https://minio.jeans-host.net`
 2. Cloudflare OAuth prompt (if not authenticated)
-3. Authelia login (if no session)
-4. Authelia 2FA (if policy requires)
-5. Service access granted
+3. Service access granted
+4. Check Cloudflare dashboard for access logs
+
+### Common Issues
+
+**Issue**: Service not accessible
+- Verify Cloudflare Tunnel route exists
+- Check IngressRoute matches hostname
+- Confirm Cloudflare access policy allows your email
+
+**Issue**: 404 errors
+- Verify IngressRoute uses `web` entrypoint (not `websecure`)
+- Check service name and port in IngressRoute
+- Ensure service is running: `kubectl get pods -n <namespace>`
 
 ## Version Information
 
-- **Authelia**: 4.39.14
 - **Cloudflare Tunnel**: 2025.10.0
-- **Traefik**: Via Talos Kubernetes
+- **Traefik**: Via Talos Kubernetes default installation
 
 ## Related Documentation
 
-- [Authelia Configuration](../flux/clusters/talos/apps/authelia/)
 - [Cloudflare Tunnel Setup](../flux/clusters/talos/infrastructure/cloudflare-tunnel/)
-- [MinIO Access](../flux/clusters/talos/apps/rag-system/minio/)
+- [MinIO Configuration](../flux/clusters/talos/apps/rag-system/minio/)
+- [Cluster Dashboard](../flux/clusters/talos/apps/cluster-dashboard/)

@@ -9,11 +9,6 @@ spec:
   routes:
     - match: Host(`minio.jeans-host.net`)
       kind: Rule
-      middlewares:
-        - name: secure-headers
-          namespace: authelia
-        - name: authelia
-          namespace: authelia
       services:
         - name: minio-console
           port: 9001
