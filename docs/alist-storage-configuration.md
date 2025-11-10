@@ -37,6 +37,7 @@ Add two S3 storage backends:
 - **Access Key ID**: Use value from `$MINIO_ACCESS_KEY` env var
 - **Secret Access Key**: Use value from `$MINIO_SECRET_KEY` env var
 - **Root Folder Path**: `/`
+- **Custom Host**: `https://s3.jeans-host.net/rag-documents` (IMPORTANT: For external access)
 - **Force Path Style**: ✓ (enabled)
 - **List Object Version**: `v1`
 - **Sign URL Expire**: `4` hours
@@ -51,6 +52,7 @@ Add two S3 storage backends:
 - **Access Key ID**: Use value from `$MINIO_ACCESS_KEY` env var
 - **Secret Access Key**: Use value from `$MINIO_SECRET_KEY` env var
 - **Root Folder Path**: `/`
+- **Custom Host**: `https://s3.jeans-host.net/rag-photos` (IMPORTANT: For external access)
 - **Force Path Style**: ✓ (enabled)
 - **List Object Version**: `v1`
 - **Sign URL Expire**: `4` hours
