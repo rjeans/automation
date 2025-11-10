@@ -39,9 +39,6 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /opt/alist/data
-            - name: alist-config
-              mountPath: /opt/alist/data/config.json
-              subPath: config.json
           resources:
             requests:
               cpu: 50m
@@ -65,9 +62,6 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: alist-config
-        - name: alist-config
-          configMap:
-            name: alist-config
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
