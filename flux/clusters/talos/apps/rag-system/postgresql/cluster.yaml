@@ -1,0 +1,62 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres-rag
+  namespace: rag-system
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.6
+
+  # Storage configuration
+  storage:
+    storageClass: longhorn-ha
+    size: 20Gi
+
+  # Resource limits optimized for Raspberry Pi
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+  # PostgreSQL configuration
+  postgresql:
+    parameters:
+      # Performance tuning for Pi
+      shared_buffers: 256MB
+      effective_cache_size: 1GB
+      maintenance_work_mem: 128MB
+      checkpoint_completion_target: 0.9
+      wal_buffers: 16MB
+      default_statistics_target: 100
+      random_page_cost: 1.1
+      effective_io_concurrency: 200
+      work_mem: 8MB
+      min_wal_size: 1GB
+      max_wal_size: 4GB
+
+      # Connection limits
+      max_connections: 100
+
+    # Enable pgvector extension
+    shared_preload_libraries:
+      - pgaudit
+      - pg_stat_statements
+      - vector
+
+  # Bootstrap configuration
+  bootstrap:
+    initdb:
+      database: postgres
+      owner: postgres
+      secret:
+        name: postgres-rag-superuser
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS vector;
+        - CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+  # Monitoring (enable later when Prometheus is deployed)
+  monitoring:
+    enablePodMonitor: false
