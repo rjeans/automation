@@ -4,6 +4,8 @@ namespace: alist
 resources:
   - namespace.yaml
   - minio-credentials-secret.yaml
+  - configmap.yaml
+  - init-configmap.yaml
   - deployment.yaml
   - service.yaml
   - ingressroute.yaml

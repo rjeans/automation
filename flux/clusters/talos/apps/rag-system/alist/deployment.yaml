@@ -13,6 +13,26 @@ spec:
       labels:
         app: alist
     spec:
+      initContainers:
+        - name: init-storage
+          image: curlimages/curl:8.5.0
+          command: ["/bin/sh", "/scripts/init-storage.sh"]
+          env:
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: alist-minio-credentials
+                  key: accessKeyID
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: alist-minio-credentials
+                  key: secretAccessKey
+          volumeMounts:
+            - name: config
+              mountPath: /opt/alist/data
+            - name: init-script
+              mountPath: /scripts
       containers:
         - name: alist
           image: xhofe/alist:v3.39.2
@@ -39,6 +59,9 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /opt/alist/data
+            - name: alist-config
+              mountPath: /opt/alist/data/config.json
+              subPath: config.json
           resources:
             requests:
               cpu: 50m
@@ -62,6 +85,13 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: alist-config
+        - name: alist-config
+          configMap:
+            name: alist-config
+        - name: init-script
+          configMap:
+            name: alist-init-script
+            defaultMode: 0755
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
