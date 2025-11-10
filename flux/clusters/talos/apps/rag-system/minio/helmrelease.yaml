@@ -1,0 +1,84 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: minio
+  namespace: rag-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: minio
+      version: '5.3.x'
+      sourceRef:
+        kind: HelmRepository
+        name: minio
+        namespace: rag-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # Deployment mode
+    mode: standalone
+
+    # Resource limits for Raspberry Pi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+    # Single replica for standalone mode
+    replicas: 1
+
+    # Use existing secret for credentials
+    existingSecret: minio-root-credentials
+
+    # Persistence using Longhorn
+    persistence:
+      enabled: true
+      storageClass: longhorn-standard
+      size: 50Gi
+
+    # Service configuration
+    service:
+      type: ClusterIP
+      port: 9000
+
+    # Console service
+    consoleService:
+      type: ClusterIP
+      port: 9001
+
+    # Enable versioning by default
+    buckets:
+      - name: rag-documents
+        policy: none
+        versioning: true
+        objectlocking: false
+      - name: rag-embeddings
+        policy: none
+        versioning: true
+        objectlocking: false
+      - name: rag-photos
+        policy: none
+        versioning: true
+        objectlocking: false
+
+    # Security context for Pi
+    securityContext:
+      enabled: true
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+
+    # Metrics (can enable later with Prometheus)
+    metrics:
+      serviceMonitor:
+        enabled: false
