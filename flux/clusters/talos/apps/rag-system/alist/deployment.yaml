@@ -26,6 +26,16 @@ spec:
               value: "1000"
             - name: UMASK
               value: "022"
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: alist-minio-credentials
+                  key: accessKeyID
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: alist-minio-credentials
+                  key: secretAccessKey
           volumeMounts:
             - name: config
               mountPath: /opt/alist/data
