@@ -17,3 +17,8 @@ spec:
   path: ./flux/clusters/talos/apps
   prune: false  # Disabled to prevent conflicts with Helm-managed resources
   wait: false
+  # SOPS decryption configuration
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age

@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: cluster-dashboard
 resources:
   - namespace.yaml
+  - secret.yaml
   - helmrelease.yaml
   - ingress-external.yaml
   - middleware.yaml
