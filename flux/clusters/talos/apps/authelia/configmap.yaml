@@ -17,7 +17,7 @@ data:
 
     totp:
       disable: false
-      issuer: jeansy.org
+      issuer: jeans-host.net
       algorithm: sha1
       digits: 6
       period: 30
@@ -42,7 +42,7 @@ data:
       rules:
         # MinIO console access for admins only
         - domain:
-            - "minio.jeansy.org"
+            - "minio.jeans-host.net"
           policy: two_factor
           subject:
             - "group:admins"
@@ -53,8 +53,8 @@ data:
 
     session:
       cookies:
-        - domain: jeansy.org
-          authelia_url: https://auth.jeansy.org
+        - domain: jeans-host.net
+          authelia_url: https://auth.jeans-host.net
           expiration: 1h
           inactivity: 5m
           remember_me: 1M

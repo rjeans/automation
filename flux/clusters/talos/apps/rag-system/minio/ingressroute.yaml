@@ -7,7 +7,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`minio.jeansy.org`)
+    - match: Host(`minio.jeans-host.net`)
       kind: Rule
       middlewares:
         - name: authelia

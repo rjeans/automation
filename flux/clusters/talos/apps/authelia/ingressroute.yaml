@@ -7,7 +7,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`auth.jeansy.org`)
+    - match: Host(`auth.jeans-host.net`)
       kind: Rule
       services:
         - name: authelia
