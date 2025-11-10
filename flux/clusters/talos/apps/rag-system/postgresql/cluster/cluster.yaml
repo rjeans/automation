@@ -9,7 +9,7 @@ spec:
 
   # Storage configuration
   storage:
-    storageClass: longhorn-ha
+    storageClass: longhorn-standard
     size: 20Gi
 
   # Resource limits optimized for Raspberry Pi
