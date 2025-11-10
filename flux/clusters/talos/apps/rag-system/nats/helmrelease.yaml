@@ -1,0 +1,86 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nats
+  namespace: rag-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: nats
+      version: '1.2.x'
+      sourceRef:
+        kind: HelmRepository
+        name: nats
+        namespace: rag-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # NATS configuration
+    config:
+      cluster:
+        enabled: false  # Single node for Pi cluster
+      jetstream:
+        enabled: true
+        fileStore:
+          pvc:
+            size: 10Gi
+            storageClassName: longhorn-standard
+        memStore:
+          enabled: true
+          maxSize: 512Mi
+
+    # Container resources optimized for Raspberry Pi
+    container:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
+
+    # Single replica for standalone mode
+    replicas: 1
+
+    # Service configuration
+    service:
+      enabled: true
+      type: ClusterIP
+      ports:
+        client:
+          port: 4222
+        cluster:
+          port: 6222
+        monitor:
+          port: 8222
+        websocket:
+          enabled: true
+          port: 8080
+
+    # NATS Box (debugging/management container)
+    natsBox:
+      enabled: true
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
+
+    # Monitoring (can enable later with Prometheus)
+    exporter:
+      enabled: false
+
+    # Security context for Pi
+    securityContext:
+      fsGroup: 1000
+      runAsUser: 1000
+      runAsNonRoot: true

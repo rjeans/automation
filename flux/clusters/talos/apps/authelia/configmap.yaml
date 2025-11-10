@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authelia-config
+  namespace: authelia
+data:
+  configuration.yml: |
+    theme: auto
+    default_2fa_method: totp
+
+    server:
+      address: 'tcp://0.0.0.0:9091'
+
+    log:
+      level: info
+      format: text
+
+    totp:
+      disable: false
+      issuer: jeansy.org
+      algorithm: sha1
+      digits: 6
+      period: 30
+      skew: 1
+
+    authentication_backend:
+      password_reset:
+        disable: false
+      refresh_interval: 5m
+      file:
+        path: /config/users_database.yml
+        password:
+          algorithm: argon2id
+          iterations: 3
+          key_length: 32
+          salt_length: 16
+          memory: 65536
+          parallelism: 4
+
+    access_control:
+      default_policy: deny
+      rules:
+        # MinIO console access for admins only
+        - domain:
+            - "minio.jeansy.org"
+          policy: two_factor
+          subject:
+            - "group:admins"
+
+        # Future rules for other services
+        # - domain: "app.jeansy.org"
+        #   policy: two_factor
+
+    session:
+      secret: will_be_overridden_by_env
+      domain: jeansy.org
+      expiration: 1h
+      inactivity: 5m
+      remember_me: 1M
+
+    regulation:
+      max_retries: 3
+      find_time: 2m
+      ban_time: 5m
+
+    storage:
+      local:
+        path: /config/db.sqlite3
+
+    notifier:
+      disable_startup_check: true
+      filesystem:
+        filename: /config/notifications.txt

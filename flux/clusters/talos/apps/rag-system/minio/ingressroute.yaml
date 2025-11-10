@@ -1,0 +1,19 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: minio-console
+  namespace: rag-system
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`minio.jeansy.org`)
+      kind: Rule
+      middlewares:
+        - name: authelia
+          namespace: authelia
+      services:
+        - name: minio-console
+          port: 9001
+  tls:
+    certResolver: cloudflare
