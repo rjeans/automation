@@ -35,6 +35,12 @@ spec:
       storageOverProvisioningPercentage: 200
       upgradeChecker: false
 
+    # Engine image toleration for control plane nodes
+    defaultEngineImage:
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+
     # Resource limits for Raspberry Pi
     longhornManager:
       tolerations:
