@@ -1,0 +1,137 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: paperless
+  namespace: rag-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: paperless-ngx
+      version: '0.29.x'
+      sourceRef:
+        kind: HelmRepository
+        name: gabe565
+        namespace: rag-system
+      interval: 12h
+
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+
+  values:
+    image:
+      repository: ghcr.io/paperless-ngx/paperless-ngx
+      tag: 2.14.7
+      pullPolicy: IfNotPresent
+
+    # Disable embedded databases - we're using external ones
+    postgresql:
+      enabled: false
+
+    mariadb:
+      enabled: false
+
+    redis:
+      enabled: false
+
+    # Environment configuration from secrets
+    envFrom:
+      - secretRef:
+          name: paperless-config
+      - secretRef:
+          name: paperless-admin
+
+    env:
+      # Generate secret key (will be consistent per deployment)
+      PAPERLESS_SECRET_KEY: "change-me-to-a-random-string-later"
+      PAPERLESS_ADMIN_USER:
+        valueFrom:
+          secretKeyRef:
+            name: paperless-admin
+            key: username
+      PAPERLESS_ADMIN_PASSWORD:
+        valueFrom:
+          secretKeyRef:
+            name: paperless-admin
+            key: password
+
+    # Service configuration
+    service:
+      main:
+        type: ClusterIP
+        ports:
+          http:
+            port: 8000
+            targetPort: 8000
+
+    # Persistence - only for consume and export directories
+    # Document storage is handled by S3
+    persistence:
+      data:
+        enabled: false
+      media:
+        enabled: false
+      export:
+        enabled: true
+        retain: true
+        storageClass: longhorn-standard
+        accessMode: ReadWriteOnce
+        size: 2Gi
+        mountPath: /usr/src/paperless/export
+      consume:
+        enabled: true
+        retain: true
+        storageClass: longhorn-standard
+        accessMode: ReadWriteOnce
+        size: 5Gi
+        mountPath: /usr/src/paperless/consume
+
+    # Resource limits for Raspberry Pi
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+
+    # Probes
+    probes:
+      liveness:
+        enabled: true
+        custom: true
+        spec:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 5
+      readiness:
+        enabled: true
+        custom: true
+        spec:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      startup:
+        enabled: true
+        custom: true
+        spec:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 30
