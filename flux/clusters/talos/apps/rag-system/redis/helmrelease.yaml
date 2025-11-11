@@ -29,7 +29,7 @@ spec:
     image:
       registry: docker.io
       repository: bitnami/redis
-      tag: 7.4.1-debian-12-r3  # Current stable version
+      tag: "7.4.1"  # Use simple version tag without Debian suffix
 
     # Authentication (no password for internal cluster use)
     auth:
