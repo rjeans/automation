@@ -8,24 +8,11 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      serviceAccountName: paperless-db-init
       containers:
         - name: init-db
-          image: postgres:16-alpine
+          image: bitnami/kubectl:latest
           env:
-            - name: PGHOST
-              value: postgres-rag-rw.rag-system.svc.cluster.local
-            - name: PGPORT
-              value: "5432"
-            - name: PGUSER
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-rag-superuser
-                  key: username
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-rag-superuser
-                  key: password
             - name: PAPERLESS_USER
               valueFrom:
                 secretKeyRef:
@@ -37,14 +24,14 @@ spec:
                   name: paperless-db-credentials
                   key: password
           command:
-            - /bin/sh
+            - /bin/bash
             - -c
             - |
               set -e
               echo "Creating paperless database and user..."
 
-              # Create user if not exists
-              psql -v ON_ERROR_STOP=1 <<-EOSQL
+              # Execute commands directly in the postgres pod (no remote auth needed)
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -c "
                 DO \$\$
                 BEGIN
                   IF NOT EXISTS (SELECT FROM pg_user WHERE usename = '${PAPERLESS_USER}') THEN
@@ -52,18 +39,46 @@ spec:
                   END IF;
                 END
                 \$\$;
-              EOSQL
+              "
 
-              # Create database if not exists
-              psql -v ON_ERROR_STOP=1 <<-EOSQL
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -c "
                 SELECT 'CREATE DATABASE paperless OWNER ${PAPERLESS_USER}'
                 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'paperless')
-                \gexec
-              EOSQL
+                \\gexec
+              "
 
-              # Grant privileges
-              psql -v ON_ERROR_STOP=1 <<-EOSQL
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -c "
                 GRANT ALL PRIVILEGES ON DATABASE paperless TO ${PAPERLESS_USER};
-              EOSQL
+              "
 
               echo "Database initialization complete"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: paperless-db-init
+  namespace: rag-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: paperless-db-init
+  namespace: rag-system
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/exec"]
+    verbs: ["get", "list", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: paperless-db-init
+  namespace: rag-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: paperless-db-init
+subjects:
+  - kind: ServiceAccount
+    name: paperless-db-init
+    namespace: rag-system
