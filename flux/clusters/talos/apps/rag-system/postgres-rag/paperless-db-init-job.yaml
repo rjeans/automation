@@ -17,7 +17,10 @@ spec:
             - name: PGPORT
               value: "5432"
             - name: PGUSER
-              value: postgres
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-rag-superuser
+                  key: username
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
