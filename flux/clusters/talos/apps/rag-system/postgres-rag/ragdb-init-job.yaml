@@ -39,6 +39,20 @@ spec:
               echo "Creating vector extension..."
               kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d ragdb -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
+              echo "Setting postgres user password..."
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d ragdb -c "ALTER USER postgres WITH PASSWORD 'dg99Z5u8LvrRlDmyEhsH93UjDKB6mqqhf3fMd5mA8Iw=';"
+
+              echo "Creating paperless user if not exists..."
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d ragdb <<'EOSQL'
+              DO \$\$
+              BEGIN
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_user WHERE usename = 'paperless') THEN
+                  CREATE USER paperless;
+                END IF;
+              END
+              \$\$;
+              EOSQL
+
               echo "Creating documents table..."
               kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d ragdb <<'EOSQL'
               CREATE TABLE IF NOT EXISTS documents (
@@ -78,6 +92,14 @@ spec:
               kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d ragdb <<'EOSQL'
               CREATE INDEX IF NOT EXISTS idx_documents_paperless_id ON documents(paperless_id);
               CREATE INDEX IF NOT EXISTS idx_document_chunks_document_id ON document_chunks(document_id);
+              EOSQL
+
+              echo "Granting permissions to paperless user..."
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d ragdb <<'EOSQL'
+              GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO paperless;
+              GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO paperless;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO paperless;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO paperless;
               EOSQL
 
               # Only create ivfflat index if we have data (avoids the warning)
