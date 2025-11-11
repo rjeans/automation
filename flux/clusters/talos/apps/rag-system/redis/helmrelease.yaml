@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: redis
-      version: '20.x.x'
+      version: '19.6.4'  # Use stable version that doesn't require OCI
       sourceRef:
         kind: HelmRepository
         name: bitnami
