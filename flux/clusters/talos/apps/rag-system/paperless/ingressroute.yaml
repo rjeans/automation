@@ -12,6 +12,3 @@ spec:
       services:
         - name: paperless-paperless-ngx
           port: 8000
-      middlewares:
-        - name: cloudflare-oauth
-          namespace: traefik
