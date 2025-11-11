@@ -10,7 +10,7 @@ spec:
     - match: Host(`paperless.jeansy.org`)
       kind: Rule
       services:
-        - name: paperless
+        - name: paperless-paperless-ngx
           port: 8000
       middlewares:
         - name: cloudflare-oauth
