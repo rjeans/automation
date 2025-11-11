@@ -18,7 +18,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: ragdb-init
-          image: bitnami/postgresql:16
+          image: bitnami/kubectl:latest
           command:
             - /bin/bash
             - -c
