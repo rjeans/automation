@@ -5,7 +5,7 @@ metadata:
   namespace: rag-system
 spec:
   entryPoints:
-    - websecure
+    - web
   routes:
     - match: Host(`paperless.jeansy.org`)
       kind: Rule
@@ -15,5 +15,3 @@ spec:
       middlewares:
         - name: cloudflare-oauth
           namespace: traefik
-  tls:
-    certResolver: cloudflare

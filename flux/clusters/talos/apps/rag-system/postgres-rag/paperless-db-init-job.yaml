@@ -50,8 +50,15 @@ spec:
                 echo "Database paperless already exists, skipping creation"
               fi
 
-              # Grant privileges
+              # Grant privileges on database
               kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE paperless TO ${PAPERLESS_USER};"
+
+              # Grant privileges on public schema
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d paperless -c "GRANT ALL ON SCHEMA public TO ${PAPERLESS_USER};"
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d paperless -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${PAPERLESS_USER};"
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d paperless -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ${PAPERLESS_USER};"
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d paperless -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ${PAPERLESS_USER};"
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d paperless -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ${PAPERLESS_USER};"
 
               echo "Database initialization complete"
 ---
