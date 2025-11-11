@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: paperless-ngx
-      version: '0.29.x'
+      version: '0.24.x'
       sourceRef:
         kind: HelmRepository
         name: gabe565
