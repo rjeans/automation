@@ -31,6 +31,8 @@ spec:
               echo "Creating paperless database and user..."
 
               # Execute commands directly in the postgres pod (no remote auth needed)
+
+              # Create user if not exists
               kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -c "
                 DO \$\$
                 BEGIN
@@ -38,18 +40,18 @@ spec:
                     CREATE USER ${PAPERLESS_USER} WITH PASSWORD '${PAPERLESS_PASSWORD}';
                   END IF;
                 END
-                \$\$;
-              "
+                \$\$;"
 
-              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -c "
-                SELECT 'CREATE DATABASE paperless OWNER ${PAPERLESS_USER}'
-                WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'paperless')
-                \\gexec
-              "
+              # Create database if not exists (check first to avoid error)
+              DB_EXISTS=$(kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname='paperless'")
+              if [ -z "$DB_EXISTS" ]; then
+                kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -c "CREATE DATABASE paperless OWNER ${PAPERLESS_USER};"
+              else
+                echo "Database paperless already exists, skipping creation"
+              fi
 
-              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -c "
-                GRANT ALL PRIVILEGES ON DATABASE paperless TO ${PAPERLESS_USER};
-              "
+              # Grant privileges
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE paperless TO ${PAPERLESS_USER};"
 
               echo "Database initialization complete"
 ---
