@@ -1,0 +1,130 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ragdb-init
+  namespace: rag-system
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    metadata:
+      name: ragdb-init
+    spec:
+      serviceAccountName: ragdb-init
+      restartPolicy: Never
+      containers:
+        - name: ragdb-init
+          image: bitnami/postgresql:16
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Initializing RAG database schema..."
+
+              # Check if ragdb database exists
+              DB_EXISTS=$(kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname='ragdb'")
+
+              if [ -z "$DB_EXISTS" ]; then
+                echo "Creating ragdb database..."
+                kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -c "CREATE DATABASE ragdb;"
+              else
+                echo "Database ragdb already exists, skipping creation"
+              fi
+
+              echo "Creating vector extension..."
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d ragdb -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+              echo "Creating documents table..."
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d ragdb <<'EOSQL'
+              CREATE TABLE IF NOT EXISTS documents (
+                  id SERIAL PRIMARY KEY,
+                  paperless_id INTEGER UNIQUE NOT NULL,
+                  title TEXT NOT NULL,
+                  content TEXT NOT NULL,
+                  created_date TIMESTAMP,
+                  modified_date TIMESTAMP,
+                  correspondent TEXT,
+                  document_type TEXT,
+                  tags TEXT[],
+                  page_count INTEGER,
+                  file_size BIGINT,
+                  indexed_at TIMESTAMP DEFAULT NOW(),
+                  updated_at TIMESTAMP DEFAULT NOW()
+              );
+              EOSQL
+
+              echo "Creating document_chunks table..."
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d ragdb <<'EOSQL'
+              CREATE TABLE IF NOT EXISTS document_chunks (
+                  id SERIAL PRIMARY KEY,
+                  document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+                  chunk_index INTEGER NOT NULL,
+                  chunk_text TEXT NOT NULL,
+                  embedding vector(1536),
+                  token_count INTEGER,
+                  start_char INTEGER,
+                  end_char INTEGER,
+                  created_at TIMESTAMP DEFAULT NOW(),
+                  UNIQUE(document_id, chunk_index)
+              );
+              EOSQL
+
+              echo "Creating indexes..."
+              kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d ragdb <<'EOSQL'
+              CREATE INDEX IF NOT EXISTS idx_documents_paperless_id ON documents(paperless_id);
+              CREATE INDEX IF NOT EXISTS idx_document_chunks_document_id ON document_chunks(document_id);
+              EOSQL
+
+              # Only create ivfflat index if we have data (avoids the warning)
+              CHUNK_COUNT=$(kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d ragdb -tAc "SELECT COUNT(*) FROM document_chunks;")
+
+              if [ "$CHUNK_COUNT" -gt 100 ]; then
+                echo "Creating vector similarity index (sufficient data exists)..."
+                kubectl exec -n rag-system postgres-rag-1 -- psql -U postgres -d ragdb <<'EOSQL'
+              CREATE INDEX IF NOT EXISTS idx_document_chunks_embedding
+              ON document_chunks USING ivfflat (embedding vector_cosine_ops)
+              WITH (lists = 100);
+              EOSQL
+              else
+                echo "Skipping vector index creation (will be created when sufficient data exists)"
+              fi
+
+              echo "RAG database initialization complete!"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ragdb-init
+  namespace: rag-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ragdb-init
+  namespace: rag-system
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/exec"]
+    verbs: ["get", "list", "create"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ragdb-init
+  namespace: rag-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ragdb-init
+subjects:
+  - kind: ServiceAccount
+    name: ragdb-init
+    namespace: rag-system

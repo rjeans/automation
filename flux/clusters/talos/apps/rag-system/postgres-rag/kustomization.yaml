@@ -4,3 +4,4 @@ namespace: rag-system
 resources:
   - paperless-db-secret.yaml
   - paperless-db-init-job.yaml
+  - ragdb-init-job.yaml
