@@ -7,7 +7,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`paperless.jeansy.org`)
+    - match: Host(`paperless.jeans-host.net`)
       kind: Rule
       services:
         - name: paperless-paperless-ngx
