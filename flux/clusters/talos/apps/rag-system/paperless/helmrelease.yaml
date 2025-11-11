@@ -69,13 +69,22 @@ spec:
             port: 8000
             targetPort: 8000
 
-    # Persistence - only for consume and export directories
-    # Document storage is handled by S3
+    # Persistence - Longhorn storage for documents and data
     persistence:
       data:
-        enabled: false
+        enabled: true
+        retain: true
+        storageClass: longhorn-standard
+        accessMode: ReadWriteOnce
+        size: 10Gi  # Index, SQLite cache, etc
+        mountPath: /usr/src/paperless/data
       media:
-        enabled: false
+        enabled: true
+        retain: true
+        storageClass: longhorn-standard
+        accessMode: ReadWriteOnce
+        size: 50Gi  # Document originals, thumbnails, archives
+        mountPath: /usr/src/paperless/media
       export:
         enabled: true
         retain: true
