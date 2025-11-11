@@ -4,5 +4,7 @@ resources:
   - namespace.yaml
   - cloudnative-pg-operator.yaml
   - postgres-rag-cluster.yaml
+  - postgres-rag
   - minio
   - nats
+  - redis

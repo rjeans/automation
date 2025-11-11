@@ -1,0 +1,46 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: redis
+  namespace: rag-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: redis
+      version: '20.x.x'
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: rag-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # Architecture
+    architecture: standalone
+
+    # Authentication (no password for internal cluster use)
+    auth:
+      enabled: false
+
+    # Master configuration
+    master:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+      persistence:
+        enabled: false  # Ephemeral storage for cache/task queue
+
+    # Metrics (optional)
+    metrics:
+      enabled: false

@@ -3,8 +3,4 @@ kind: Kustomization
 namespace: rag-system
 resources:
   - helmrepository.yaml
-  - secret.yaml
-  - user-rich-secret.yaml
-  - user-paperless-secret.yaml
   - helmrelease.yaml
-  - ingressroute.yaml

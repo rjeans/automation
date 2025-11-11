@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: paperless-db-init
+  namespace: rag-system
+spec:
+  ttlSecondsAfterFinished: 300  # Clean up after 5 minutes
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init-db
+          image: postgres:16-alpine
+          env:
+            - name: PGHOST
+              value: postgres-rag-rw.rag-system.svc.cluster.local
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              value: postgres
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-rag-superuser
+                  key: password
+            - name: PAPERLESS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-db-credentials
+                  key: username
+            - name: PAPERLESS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-db-credentials
+                  key: password
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Creating paperless database and user..."
+
+              # Create user if not exists
+              psql -v ON_ERROR_STOP=1 <<-EOSQL
+                DO \$\$
+                BEGIN
+                  IF NOT EXISTS (SELECT FROM pg_user WHERE usename = '${PAPERLESS_USER}') THEN
+                    CREATE USER ${PAPERLESS_USER} WITH PASSWORD '${PAPERLESS_PASSWORD}';
+                  END IF;
+                END
+                \$\$;
+              EOSQL
+
+              # Create database if not exists
+              psql -v ON_ERROR_STOP=1 <<-EOSQL
+                SELECT 'CREATE DATABASE paperless OWNER ${PAPERLESS_USER}'
+                WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'paperless')
+                \gexec
+              EOSQL
+
+              # Grant privileges
+              psql -v ON_ERROR_STOP=1 <<-EOSQL
+                GRANT ALL PRIVILEGES ON DATABASE paperless TO ${PAPERLESS_USER};
+              EOSQL
+
+              echo "Database initialization complete"
