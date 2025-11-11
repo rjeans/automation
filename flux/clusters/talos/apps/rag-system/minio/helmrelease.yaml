@@ -77,10 +77,6 @@ spec:
         existingSecret: minio-user-rich
         existingSecretKey: password
         policy: consoleAdmin
-      - accessKey: alist-service
-        existingSecret: minio-user-alist
-        existingSecretKey: password
-        policy: readwrite
 
     # Security context for Pi
     securityContext:

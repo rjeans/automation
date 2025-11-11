@@ -6,4 +6,3 @@ resources:
   - postgres-rag-cluster.yaml
   - minio
   - nats
-  - alist
